@@ -1,0 +1,101 @@
+digraph {
+	graph [size="12,12"]
+	node [align=left fontname=monospace fontsize=10 height=0.2 ranksep=0.1 shape=box style=filled]
+	139975905435136 [label="
+ ()" fillcolor=darkolivegreen1]
+	139975905451792 [label="NllLossBackward0
+----------------------------------
+ignore_index: 18446744073709551516
+reduction   :                    1
+self        :       [saved tensor]
+target      :       [saved tensor]
+total_weight:       [saved tensor]
+weight      :                 None"]
+	139975905449776 -> 139975905451792
+	139975905449776 [label="LogSoftmaxBackward0
+----------------------
+dim   :              1
+result: [saved tensor]"]
+	139975905448672 -> 139975905449776
+	139975905448672 [label="AddmmBackward0
+----------------------------
+alpha       :              1
+beta        :              1
+mat1        : [saved tensor]
+mat1_sizes  :      (96, 256)
+mat1_strides:       (256, 1)
+mat2        : [saved tensor]
+mat2_sizes  :      (256, 10)
+mat2_strides:       (1, 256)"]
+	139975903267664 -> 139975905448672
+	139975230525328 [label="
+ (10)" fillcolor=lightblue]
+	139975230525328 -> 139975903267664
+	139975903267664 [label=AccumulateGrad]
+	139975905448576 -> 139975905448672
+	139975905448576 [label="SigmoidBackward0
+----------------------
+result: [saved tensor]"]
+	139975905449488 -> 139975905448576
+	139975905449488 [label="AddmmBackward0
+----------------------------
+alpha       :              1
+beta        :              1
+mat1        : [saved tensor]
+mat1_sizes  :      (96, 256)
+mat1_strides:       (256, 1)
+mat2        : [saved tensor]
+mat2_sizes  :     (256, 256)
+mat2_strides:       (256, 1)"]
+	139975903267616 -> 139975905449488
+	139975914288288 [label="
+ (256)" fillcolor=lightblue]
+	139975914288288 -> 139975903267616
+	139975903267616 [label=AccumulateGrad]
+	139975905448624 -> 139975905449488
+	139975905448624 [label="SigmoidBackward0
+----------------------
+result: [saved tensor]"]
+	139975905448096 -> 139975905448624
+	139975905448096 [label="AddmmBackward0
+----------------------------
+alpha       :              1
+beta        :              1
+mat1        : [saved tensor]
+mat1_sizes  :      (96, 784)
+mat1_strides:             ()
+mat2        :           None
+mat2_sizes  :     (784, 256)
+mat2_strides:       (256, 1)"]
+	139975903268720 -> 139975905448096
+	139975914242352 [label="
+ (256)" fillcolor=lightblue]
+	139975914242352 -> 139975903268720
+	139975903268720 [label=AccumulateGrad]
+	139975905449440 -> 139975905448096
+	139975905449440 [label=TBackward0]
+	139975905450304 -> 139975905449440
+	139975905450304 [label=TBackward0]
+	139975903265456 -> 139975905450304
+	139975230525088 [label="
+ (784, 256)" fillcolor=lightblue]
+	139975230525088 -> 139975903265456
+	139975903265456 [label=AccumulateGrad]
+	139975905448912 -> 139975905449488
+	139975905448912 [label=TBackward0]
+	139975905449056 -> 139975905448912
+	139975905449056 [label=TBackward0]
+	139975903266896 -> 139975905449056
+	139975914288128 [label="
+ (256, 256)" fillcolor=lightblue]
+	139975914288128 -> 139975903266896
+	139975903266896 [label=AccumulateGrad]
+	139975905451312 -> 139975905448672
+	139975905451312 [label=TBackward0]
+	139975903266992 -> 139975905451312
+	139975230524928 [label="
+ (10, 256)" fillcolor=lightblue]
+	139975230524928 -> 139975903266992
+	139975903266992 [label=AccumulateGrad]
+	139975905451792 -> 139975905435136
+}

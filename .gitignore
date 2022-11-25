@@ -1,0 +1,15 @@
+*.pyc
+logs/*
+.idea/
+data/
+plygrnd/data
+exps/
+sec_res/
+bk/
+*.npy
+*.npz
+*.zip
+*.h5
+*.log
+*.model
+.ipynb_checkpoints
