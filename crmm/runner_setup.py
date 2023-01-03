@@ -1,4 +1,6 @@
 import json
+
+import torch
 from transformers.utils import logging
 import logging as syslogging
 import os
@@ -21,7 +23,7 @@ def setup(exp_args: CrmmTrainingArguments):
     Returns:
         config: configuration dictionary
     """
-
+    torch.set_num_threads(12)
     initial_timestamp = datetime.now()
     root_dir = exp_args.root_dir
     if not os.path.isdir(root_dir):

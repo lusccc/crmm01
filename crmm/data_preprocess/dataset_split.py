@@ -20,11 +20,14 @@ elif n_class == 6:
     data_labels = ['AA+', 'A', 'BBB', 'BB', 'B', 'CCC-']
     data_labels = np.array(data_labels)
 
-
-seed = 10086  # !!!!!! USED TO RANDOM SHUFFLE
+seed = 3407  # !!!!!! USED TO RANDOM SHUFFLE
 cr_sec_all_df = data_df.sample(frac=1, random_state=seed)
 
-train_df, val_df, test_df = np.split(cr_sec_all_df, [int(.8 * len(data_df)), int(.9 * len(data_df))])
+n_sample = len(cr_sec_all_df)
+train_split_idx = int(n_sample * .7)
+# 406 is the test set size in paper `Multimodal Machine Learning for Credit Modeling`!
+val_split_idx = int(n_sample * (1 - 406 / n_sample))
+train_df, val_df, test_df = np.split(cr_sec_all_df, [train_split_idx, val_split_idx])
 print('Num examples train-val-test')
 print(len(train_df), len(val_df), len(test_df))
 

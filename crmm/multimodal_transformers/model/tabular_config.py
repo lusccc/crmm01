@@ -20,8 +20,9 @@ class TabularConfig:
         cat_feat_dim (int): the number of categorical features
 
     """
+
     def __init__(self,
-                 num_labels,
+                 num_labels=3,
                  mlp_division=4,
                  combine_feat_method='text_only',
                  mlp_dropout=0.1,

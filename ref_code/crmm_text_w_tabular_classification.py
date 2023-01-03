@@ -22,9 +22,9 @@ from transformers import (
 )
 from transformers.training_args import TrainingArguments
 
-from src.multimodal_transformers import load_data_from_folder
-from src.multimodal_transformers import TabularConfig
-from src.multimodal_transformers import AutoModelWithTabular
+from crmm.multimodal_transformers import load_data_from_folder
+from crmm.multimodal_transformers import TabularConfig
+from crmm.multimodal_transformers import AutoModelWithTabular
 import logzero
 from logzero import logger
 

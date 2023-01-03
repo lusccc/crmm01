@@ -1,10 +1,11 @@
 *.pyc
 logs/*
 .idea/
-data/
+./data/
 plygrnd/data
 exps/
 sec_res/
+wandb/
 bk/
 *.npy
 *.npz

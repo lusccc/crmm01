@@ -306,17 +306,15 @@ class RBM(Model):
                 and the states of the visible layer sampling (negative).
 
         """
-
         pos_hidden_probs, pos_hidden_states = self.hidden_sampling(v)
         neg_hidden_states = pos_hidden_states
 
         # Performing the Contrastive Divergence
-        for _ in range(self.steps):
+        for step in range(self.steps):
             _, visible_states = self.visible_sampling(neg_hidden_states, True)
             neg_hidden_probs, neg_hidden_states = self.hidden_sampling(
                 visible_states, True
             )
-
         return (
             pos_hidden_probs,
             pos_hidden_states,

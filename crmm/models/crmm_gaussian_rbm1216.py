@@ -2,6 +2,9 @@ import time
 from typing import Optional, Tuple
 
 import torch
+from torch import nn
+from torchviz import make_dot
+from tqdm import tqdm
 from transformers.utils import logging
 import torch.nn.functional as F
 from learnergy.models.gaussian import GaussianRBM4deep
@@ -9,7 +12,7 @@ from learnergy.models.gaussian import GaussianRBM4deep
 logger = logging.get_logger('transformers')
 
 
-class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
+class CrmmGaussianReluRBM4deep(GaussianRBM4deep):
     """A GaussianReluRBM class provides the basic implementation for
     Gaussian-ReLU Restricted Boltzmann Machines (for raw pixels values).
 
@@ -34,6 +37,7 @@ class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
             use_gpu: Optional[bool] = False,
             normalize: Optional[bool] = True,
             input_normalize: Optional[bool] = True,
+            visible_layer=None,
     ) -> None:
         """Initialization method.
 
@@ -54,7 +58,7 @@ class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
         logger.info("Overriding class: GaussianRBM -> GaussianReluRBM.")
 
         # Override its parent class
-        super(CRMMGaussianReluRBM4deep, self).__init__(
+        super(CrmmGaussianReluRBM4deep, self).__init__(
             n_visible,
             n_hidden,
             steps,
@@ -67,12 +71,27 @@ class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
             input_normalize,
         )
 
-        logger.info("Class overrided.")
+        self.visible_layer = None
+        self.hidden_layer = None
+        if visible_layer is not None:
+            self.visible_layer = visible_layer
+
+            self.W = None
+            self.a = None
+            self.b = None
+
+            """used for visible sampling!"""
+            self.hidden_layer = nn.Linear(self.n_hidden, self.n_visible)
+        if normalize:
+            # norm the visible layer output
+            self.bn = nn.BatchNorm1d(self.n_hidden)
+
 
     def fit(
             self,
             samples,
             epochs: Optional[int] = 1,
+            name=None
     ) -> Tuple[float, float]:
         """Fits a new SigmoidRBM model.
 
@@ -86,14 +105,29 @@ class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
 
         """
 
+        """ 
+        1. modification made to remove DataLoader and normalize in original learnergy!
+        since it is directly computed in forward
+        """
+        # TODO make sure below
+        """
+        2. samples should be detach, because some input has required_grad=True, cause:
+        `Trying to backward through the graph a second time`
+        """
+        samples = samples.detach()
+        # print(f'\nbegin {name} rbm fit')
+        # pbar = tqdm(range(epochs))
         for epoch in range(epochs):
+            # print(f'epoch: {epoch}')
             start = time.time()
             mse = 0
             pl = 0
 
             # Performs the Gibbs sampling procedure
             _, _, _, _, visible_states = self.gibbs_sampling(samples)
-            visible_states = visible_states.detach()
+
+            """comment this line, to make lower net layer take part in weight updating!???not sure"""
+            # visible_states = visible_states.detach()
 
             cost = torch.mean(self.energy(samples)) - torch.mean(
                 self.energy(visible_states)
@@ -108,16 +142,17 @@ class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
             mse = torch.div(
                 torch.sum(torch.pow(samples - visible_states, 2)), batch_size
             ).detach()
-            pl = self.pseudo_likelihood(samples).detach()
-
+            # pl = self.pseudo_likelihood(samples).detach()
             end = time.time()
+            # pbar.set_description(f'fit rbm: {name}, cost: {cost}, mse: {mse}')
+            # pbar.update()
 
-            self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
-
-        return mse, pl
+            # self.dump(mse=mse.item(), pl=pl.item(), time=end - start)
+        # print(f'end {name} rbm fit')
+        return mse, None
 
     def hidden_sampling(
-            self, v: torch.Tensor, scale: Optional[bool] = False
+            self, v, scale: Optional[bool] = False
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """Performs the hidden layer sampling, i.e., P(h|v).
 
@@ -129,15 +164,69 @@ class CRMMGaussianReluRBM4deep(GaussianRBM4deep):
             (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the hidden layer sampling.
 
         """
-
-        activations = F.linear(v, self.W.t(), self.b)
-
+        """ note is visible_layer!"""
+        if self.visible_layer is None:
+            activations = F.linear(v, self.W.t(), self.b)
+        else:
+            activations = self.visible_layer(v)
+            if self.normalize:
+                activations = self.bn(activations)
         if scale:
             probs = F.relu(torch.div(activations, self.T))
         else:
             probs = F.relu(activations)
-
         # Current states equals probabilities
         states = probs
-
         return probs, states
+
+    def visible_sampling(
+            self, h: torch.Tensor, scale: Optional[bool] = False
+    ) -> Tuple[torch.Tensor, torch.Tensor]:
+        """Performs the visible layer sampling, i.e., P(v|h).
+
+        Args:
+            h: A tensor incoming from the hidden layer.
+            scale: A boolean to decide whether temperature should be used or not.
+
+        Returns:
+            (Tuple[torch.Tensor, torch.Tensor]): The probabilities and states of the visible layer sampling.
+
+        """
+        """note is hidden_layer!"""
+        if self.hidden_layer is None:
+            activations = F.linear(h, self.W, self.a)
+        else:
+            activations = self.hidden_layer(h)
+        if scale:
+            states = torch.div(activations, self.T)
+        else:
+            states = activations
+
+        probs = torch.sigmoid(states)
+        return probs, states
+
+    def energy(self, samples: torch.Tensor) -> torch.Tensor:
+        """Calculates and frees the system's energy.
+
+        Args:
+            samples: Samples to be energy-freed.
+
+        Returns:
+            (torch.Tensor): The system's energy based on input samples.
+
+        """
+        """ note is visible_layer!"""
+        if self.visible_layer is None:
+            activations = F.linear(samples, self.W.t(), self.b)
+            a = self.a
+        else:
+            activations = self.visible_layer(samples)
+            a = self.hidden_layer.bias
+        # Creates a Softplus function for numerical stability
+        s = nn.Softplus()
+
+        h = torch.sum(s(activations), dim=1)
+        v = 0.5 * torch.sum((samples - a) ** 2, dim=1)
+
+        energy = v - h
+        return energy

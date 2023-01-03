@@ -20,7 +20,7 @@ from learnergy.models.gaussian import (
     GaussianSeluRBM,
     VarianceGaussianRBM,
 )
-from models.crmm_gaussian_rbm import CRMMGaussianReluRBM4deep
+from models.crmm_gaussian_rbm import CrmmGaussianReluRBM4deep
 from models.crmm_sigmoid_rbm import CRMMSigmoidRBM4deep
 from transformers.utils import logging
 
@@ -33,7 +33,7 @@ MODELS = {
     "gaussian": GaussianRBM,
     "gaussian4deep": GaussianRBM4deep,
     "gaussian_relu": GaussianReluRBM,
-    "gaussian_relu4deep": CRMMGaussianReluRBM4deep,
+    "gaussian_relu4deep": CrmmGaussianReluRBM4deep,
     "gaussian_selu": GaussianSeluRBM,
     "sigmoid": SigmoidRBM,
     "sigmoid4deep": CRMMSigmoidRBM4deep,
@@ -41,7 +41,7 @@ MODELS = {
 }
 
 
-class CRMMDBN(Model):
+class CrmmDBN(Model):
     """A DBN class provides the basic implementation for Deep Belief Networks.
 
     References:
@@ -81,7 +81,7 @@ class CRMMDBN(Model):
 
         logger.info("Overriding class: Model -> DBN.")
 
-        super(CRMMDBN, self).__init__(use_gpu=use_gpu)
+        super(CrmmDBN, self).__init__(use_gpu=use_gpu)
 
         self.n_visible = n_visible
         self.n_hidden = n_hidden
@@ -264,6 +264,7 @@ class CRMMDBN(Model):
             self,
             samples: Tensor,
             epochs: Optional[Tuple[int, ...]] = (10,),
+            name='<rbm in dbn>'
     ) -> Tuple[float, float]:
         """Fits a new DBN model.
 
@@ -277,13 +278,17 @@ class CRMMDBN(Model):
 
         """
 
+        """ 
+        modification made to remove DataLoader and normalize in original learnergy!
+        since it is directly computed in forward
+        """
         if len(epochs) != self.n_layers:
             raise e.SizeError(("`epochs` should have size equal as %d", self.n_layers))
 
         mse, pl = [], []
-
+        print(f'\nbegin {name} dbn fit')
         for i, model in enumerate(self.models):
-            # logger.info("Fitting layer %d/%d ...", i + 1, self.n_layers)
+            print("Fitting layer %d/%d ...", i + 1, self.n_layers)
 
             if i == 0:
                 model_mse, model_pl = model.fit(samples, epochs[i])
@@ -304,7 +309,7 @@ class CRMMDBN(Model):
                     # logger.info("MSE: %f | log-PL: %f", mse_, plh)
                 mse.append(mse_)
                 pl.append(plh)
-
+        print(f'end {name} dbn fit')
         return mse, pl
 
     def reconstruct(

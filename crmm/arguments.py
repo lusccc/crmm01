@@ -5,34 +5,37 @@ from typing import Optional, Union
 
 from transformers import TrainingArguments, IntervalStrategy
 
-UNSUPERV_TASK = ['pretrain_num_ae_unsuperv', 'pretrain_cat_ae_unsuperv']
+UNSUPERV_TASK = ['pretrain_num_ae_unsuperv', 'pretrain_cat_ae_unsuperv', 'pretrain_multi_modal_dbn']
+SUPERV_TASK = ['fine_tune_multi_modal_dbn_classification', 'fine_tune_multi_modal_dbn_classification_scratch']
 PREDICTION_TASK = ['predict_num_ae_embedding', 'predict_cat_ae_embedding']
-DBN_TASK = ['fit_multi_modal_dbn', 'fine_tune_only_dbns', 'multi_modal_dbn_ensemble_classification']
-TASK = UNSUPERV_TASK + PREDICTION_TASK + DBN_TASK
+TASK = UNSUPERV_TASK + PREDICTION_TASK + SUPERV_TASK
 
 
 @dataclass
 class CrmmTrainingArguments(TrainingArguments):
     # !!!!OURS!!!!
+    report_to: str = field(default='wandb')
     root_dir: str = field(default='./exps', metadata={"help": "parent dir of output_dir"})
-    task: str = field(default="multi_modal_dbn_ensemble_classification", metadata={
+    task: str = field(default="fine_tune_multi_modal_dbn_classification", metadata={
         "help": "", 'choices': TASK})
-    modality: str = field(default="num", metadata={
+    modality: str = field(default="num,cat,text", metadata={
         "help": "used in multi dbn"})
-    num_ae_model_ckpt: str = field(
-        default='exps/pretrain_num_ae_unsuperv_2022-11-01_14-31-39_w9p/output/checkpoint-1488',
-        metadata={"help": "num dbn ae model path, used for ae embedding prediction"})
-    cat_ae_model_ckpt: str = field(
-        default='exps/pretrain_cat_ae_unsuperv_2022-11-02_14-34-14_JxN/output/checkpoint-6',
-        metadata={"help": "cat dbn ae model path, used for ae embedding prediction"})
-    ae_embedding_dataset_dir: str = field(default='data/cr_sec_ae_embedding',
-                                          metadata={"help": "dir to save embedding prediction results"})
-    ae_embedding_dim: str = field(default=768, metadata={"help": ""})
-    pretrained_dbn_model_dir: str = field(
-        default='exps/fit_multi_modal_dbn_2022-11-08_19-34-23_NJe/output',
+    use_rbm_for_text: bool = field(default=True, metadata={
+        "help": ""})
+    # num_ae_model_ckpt: str = field(
+    #     default='exps/pretrain_num_ae_unsuperv_2022-11-01_14-31-39_w9p/output/checkpoint-1488',
+    #     metadata={"help": "num dbn ae model path, used for ae embedding prediction"})
+    # cat_ae_model_ckpt: str = field(
+    #     default='exps/pretrain_cat_ae_unsuperv_2022-11-02_14-34-14_JxN/output/checkpoint-6',
+    #     metadata={"help": "cat dbn ae model path, used for ae embedding prediction"})
+    # ae_embedding_dataset_dir: str = field(default='data/cr_sec_ae_embedding',
+    #                                       metadata={"help": "dir to save embedding prediction results"})
+    # ae_embedding_dim: str = field(default=768, metadata={"help": ""})
+    pretrained_multi_modal_dbn_model_dir: str = field(
+        default='exps/pretrain_multi_modal_dbn_2023-01-02_20-10-18_HKc/output',
         metadata={"help": ""})
     dbn_train_epoch: int = field(default=5, metadata={"help": ""})
-    patience: int = field(default=20, metadata={"help": ""})
+    patience: int = field(default=1000, metadata={"help": ""})
 
 
     # !!!!BELOW ARE HUGGINGFACE ARGS!!!!
@@ -46,10 +49,12 @@ class CrmmTrainingArguments(TrainingArguments):
     do_train: bool = field(default=True, metadata={"help": "Whether to run training."})
     do_eval: bool = field(default=True, metadata={"help": "Whether to run eval on the dev set."})
     do_predict: bool = field(default=False, metadata={"help": "Whether to run predictions on the test set."})
-    num_train_epochs: float = field(default=250.0, metadata={"help": "Total number of training epochs to perform."})
+    # ---
+    num_train_epochs: float = field(default=250, metadata={"help": "Total number of training epochs to perform."})
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
-    per_device_train_batch_size: int = field(default=1000, metadata={
+    # ---
+    per_device_train_batch_size: int = field(default=7, metadata={
         "help": "Batch size per GPU/TPU core/CPU for training."})
     evaluation_strategy: Union[IntervalStrategy, str] = field(default="epoch", metadata={
         "help": "The evaluation strategy to use."}, )
@@ -66,12 +71,19 @@ class CrmmTrainingArguments(TrainingArguments):
     auto_find_batch_size: bool = field(default=True, metadata={
         "help": ("Whether to automatically decrease the batch size in half and rerun the training loop again each time"
                  " a CUDA Out-of-Memory was reached")})
+    metric_for_best_model: str = field(default='eval_acc') # used for early stopping
+    greater_is_better: bool = field(default=True) # used for early stopping
 
     def __post_init__(self):
         super().__post_init__()
         if self.task in PREDICTION_TASK:
             self.do_predict = True
         self.modality = self.modality.split(',')
+        self.modality = {
+            'num': True if 'num' in self.modality else False,
+            'cat': True if 'cat' in self.modality else False,
+            'text': True if 'text' in self.modality else False,
+        }
 
 
 @dataclass

@@ -379,3 +379,10 @@ def visualize_compute_graph(model, dir):
         show_attrs=True,
         # show_saved=True
     ).render("net", directory=dir, format="png")
+
+
+def dict_to_obj(cls, d, **kwargs):
+    obj = cls(**kwargs)
+    for key, value in d.items():
+        setattr(obj, key, value)
+    return obj

@@ -27,7 +27,7 @@ class MLP(nn.Module):
             map(self.weight_init, [nn.Linear(self.layer_channels[i], self.layer_channels[i + 1])
                                    for i in range(len(self.layer_channels) - 2)])))
         final_layer = nn.Linear(self.layer_channels[-2], self.layer_channels[-1])
-        self.weight_init(final_layer,   activation='linear')
+        self.weight_init(final_layer, activation='linear')
         self.layers.append(final_layer)
 
         self.bn = bn
@@ -121,7 +121,7 @@ def hf_loss_func(inputs, classifier, labels, num_labels, class_weights):
             loss_fct = CrossEntropyLoss(weight=class_weights)
             labels = labels.long()
             loss = loss_fct(logits.view(-1, num_labels), labels.view(-1))
-        # make_dot(loss, show_attrs=True, ).render("crmmdbn", directory='./', format="pdf")
+        # make_dot(loss, show_attrs=True, ).render("mlp", directory='./', format="pdf")
     else:
         return None, logits, layer_outputs
 
@@ -130,6 +130,8 @@ def hf_loss_func(inputs, classifier, labels, num_labels, class_weights):
 
 if __name__ == '__main__':
     mlp = MLP(input_dim=256, output_dim=64, act='relu', num_hidden_lyr=2,
-                 dropout_prob=0.5, return_layer_outs=False,
-                 hidden_channels=[128,96], bn=False)
+              dropout_prob=0.5, return_layer_outs=False,
+              hidden_channels=[128, 96], bn=False)
     print(mlp)
+    x = torch.randn(2, 256)
+    make_dot(mlp(x), show_attrs=True, ).render("mlp", directory='./', format="pdf")
