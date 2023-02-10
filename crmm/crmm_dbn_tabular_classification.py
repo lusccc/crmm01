@@ -26,6 +26,7 @@ from models.category_autoencoder import CategoryAutoencoder, CategoryAutoencoder
 from models.multi_modal_dbn import MultiModalBertDBN, MultiModalConfig, CompatibleBert
 from models.numerical_autoencoder import NumericalAutoencoder, NumericalAutoencoderConfig
 from multimodal_transformers.data import load_data_from_folder
+from multimodal_transformers.data.tabular_torch_dataset import TabularTextCollator
 from multimodal_transformers.model import TabularConfig, AutoModelWithTabular
 
 from transformers.utils import logging
@@ -97,7 +98,7 @@ class CrmmTrainerCallback(TrainerCallback):
         #     model = kwargs['model']
         #     model.stop_dbn_rbm_training()
 
-        self.crmm_clsif.predict_on_test()
+        # self.crmm_clsif.predict_on_test()
         # print(f'=================end epoch: {state.epoch}=================')
 
 
@@ -116,10 +117,15 @@ class CrmmClassification:
         logger.info('setup_tabular_cols!')
         dataset_name = self.data_args.dataset_name
         if dataset_name in ['cr_sec', 'cr_sec_6']:
-            text_cols = ['Name', 'Symbol', 'Rating Agency Name', 'Sector']
+            # text_cols = ['Name', 'Symbol', 'Rating Agency Name', 'Sector']
+            # text_cols = ['Name', 'Symbol', 'Rating Agency Name', 'Sector', 'secKeywords']
             # text_cols = ['secText']
-            cat_cols = ['Symbol', 'Sector', 'CIK']
+            # text_cols = ['secKeywords']
+            # cat_cols = ['Symbol', 'Sector', 'CIK']
             # cat_cols = ['Symbol', 'Sector', 'CIK'] + ['Name', 'Symbol', 'Rating Agency Name', 'Sector']
+
+            text_cols = self.training_args.text_cols
+            cat_cols = self.training_args.cat_cols
             numerical_cols = ['currentRatio', 'quickRatio', 'cashRatio', 'daysOfSalesOutstanding', 'netProfitMargin',
                               'pretaxProfitMargin', 'grossProfitMargin', 'operatingProfitMargin', 'returnOnAssets',
                               'returnOnCapitalEmployed', 'returnOnEquity', 'assetTurnover', 'fixedAssetTurnover',
@@ -154,6 +160,7 @@ class CrmmClassification:
             cache_dir=self.bert_model_args.cache_dir,
             local_files_only=True if self.bert_model_args.cache_dir else False
         )
+        self.tokenizer = tokenizer
 
         # Get Datasets
         # !!! if the task is unsuperv pretrain or embedding prediction
@@ -169,6 +176,7 @@ class CrmmClassification:
             sep_text_token_str=tokenizer.sep_token,
             # note: unsupervised training use all data
             merge_train_val_test=True if self.training_args.task in UNSUPERV_TASK else False,
+            # debug=True
         )
 
         num_labels = len(np.unique(train_dataset.labels))
@@ -282,6 +290,7 @@ class CrmmClassification:
             compute_metrics=get_metric_fn(self.training_args.task),
             callbacks=trainer_callbacks,
             # optimizers=[NormalOptmi]
+            data_collator=TabularTextCollator(self.tokenizer)
         )
 
         trainer_callbacks[2].crmm_clsif = self
@@ -335,6 +344,7 @@ if __name__ == '__main__':
     parser = HfArgumentParser([BertModelArguments, MultimodalDataTrainingArguments, CrmmTrainingArguments])
     _bert_model_args, _data_args, _training_args = parser.parse_args_into_dataclasses()
     _training_args = runner_setup.setup(_training_args)
+    logger.info(f'training_args: {_training_args}')
 
     cc = CrmmClassification(_bert_model_args, _data_args, _training_args)
     cc.train()

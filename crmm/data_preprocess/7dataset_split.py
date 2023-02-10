@@ -3,8 +3,12 @@ import numpy as np
 
 n_class = 6
 
-data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv')
-
+# data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv')
+data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_summarized_kw_sec_text.csv')
+data_df = data_df.set_index('Id')
+# data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv',)
+# data_df.rename(columns={data_df.columns[0]: 'id'}, inplace=True)
+print()
 if n_class == 10:
     dataset_name = 'cr_sec'
     data_df = data_df.replace(
@@ -25,8 +29,9 @@ cr_sec_all_df = data_df.sample(frac=1, random_state=seed)
 
 n_sample = len(cr_sec_all_df)
 train_split_idx = int(n_sample * .7)
-# 406 is the test set size in paper `Multimodal Machine Learning for Credit Modeling`!
-val_split_idx = int(n_sample * (1 - 406 / n_sample))
+val_split_idx = int(n_sample * .8)
+# # 406 is the test set size in paper `Multimodal Machine Learning for Credit Modeling`!
+# val_split_idx = int(n_sample * (1 - 406 / n_sample))
 train_df, val_df, test_df = np.split(cr_sec_all_df, [train_split_idx, val_split_idx])
 print('Num examples train-val-test')
 print(len(train_df), len(val_df), len(test_df))

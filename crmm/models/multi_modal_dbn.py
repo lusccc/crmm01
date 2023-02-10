@@ -48,7 +48,6 @@ class MultiModalConfig(PretrainedConfig):
         super().__init__(**kwargs)
         self.tabular_config = tabular_config
         self.bert_config = bert_config
-        self.n_modality = len(use_modality)
         self.use_modality = use_modality
         if not isinstance(self.use_modality, dict):  # because load pretrainedConfig result is a dict
             self.use_modality = {
@@ -56,6 +55,10 @@ class MultiModalConfig(PretrainedConfig):
                 'cat': True if 'cat' in use_modality else False,
                 'text': True if 'text' in use_modality else False,
             }
+        self.n_modality = 0
+        for mod, use in self.use_modality.items():
+            if use:
+                self.n_modality += 1
         self.use_rbm_for_text = use_rbm_for_text
         self.dbn_train_epoch = dbn_train_epoch
         self.rbm_train_epoch = dbn_train_epoch
@@ -240,6 +243,10 @@ class MultiModalBertDBN(PreTrainedModel):
                                                                   labels,
                                                                   self.tabular_config.num_labels,
                                                                   None)
+                                                                  #https://stackoverflow.com/questions/61414065/pytorch-weight-in-cross-entropy-loss
+                                                                  # see 8class_weight.ipynb
+                                                                  # class_weights=torch.Tensor([3, 0.830040, 0.513447, 0.695364,
+                                                                  #                1.166667, 4.565217]).cuda())
             return loss, logits, classifier_layer_outputs
 
     def create_rbm(self, n_visible, n_hidden, visible_layer=None, input_norm=True, visible_out_norm=False):

@@ -20,7 +20,11 @@ class CrmmTrainingArguments(TrainingArguments):
         "help": "", 'choices': TASK})
     modality: str = field(default="num,cat,text", metadata={
         "help": "used in multi dbn"})
-    use_rbm_for_text: bool = field(default=True, metadata={
+    use_rbm_for_text: bool = field(default=False, metadata={
+        "help": ""})
+    text_cols: str = field(default="Name,Symbol,Rating Agency Name,Sector,secKeywords", metadata={
+        "help": ""})
+    cat_cols: str = field(default="Symbol,Sector,CIK", metadata={
         "help": ""})
     # num_ae_model_ckpt: str = field(
     #     default='exps/pretrain_num_ae_unsuperv_2022-11-01_14-31-39_w9p/output/checkpoint-1488',
@@ -32,11 +36,10 @@ class CrmmTrainingArguments(TrainingArguments):
     #                                       metadata={"help": "dir to save embedding prediction results"})
     # ae_embedding_dim: str = field(default=768, metadata={"help": ""})
     pretrained_multi_modal_dbn_model_dir: str = field(
-        default='exps/pretrain_multi_modal_dbn_2023-01-02_20-10-18_HKc/output',
+        default='exps/pretrain_multi_modal_dbn_2023-02-06_20-04-44_drN/output',
         metadata={"help": ""})
     dbn_train_epoch: int = field(default=5, metadata={"help": ""})
     patience: int = field(default=1000, metadata={"help": ""})
-
 
     # !!!!BELOW ARE HUGGINGFACE ARGS!!!!
     # output_dir and logging_dir will be auto set in runner_setup.setup
@@ -53,12 +56,12 @@ class CrmmTrainingArguments(TrainingArguments):
     num_train_epochs: float = field(default=250, metadata={"help": "Total number of training epochs to perform."})
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
-    # ---
-    per_device_train_batch_size: int = field(default=7, metadata={
+    # ---7 for dbn train
+    per_device_train_batch_size: int = field(default=80, metadata={
         "help": "Batch size per GPU/TPU core/CPU for training."})
     evaluation_strategy: Union[IntervalStrategy, str] = field(default="epoch", metadata={
         "help": "The evaluation strategy to use."}, )
-    dataloader_num_workers: int = field(default=12, metadata={
+    dataloader_num_workers: int = field(default=16, metadata={
         "help": ("Number of subprocesses to use for data loading (PyTorch only). 0 means that the data will be loaded"
                  " in the main process.")})
     save_strategy: Union[IntervalStrategy, str] = field(default="epoch", metadata={
@@ -71,8 +74,12 @@ class CrmmTrainingArguments(TrainingArguments):
     auto_find_batch_size: bool = field(default=True, metadata={
         "help": ("Whether to automatically decrease the batch size in half and rerun the training loop again each time"
                  " a CUDA Out-of-Memory was reached")})
-    metric_for_best_model: str = field(default='eval_acc') # used for early stopping
-    greater_is_better: bool = field(default=True) # used for early stopping
+    metric_for_best_model: str = field(default='eval_acc')  # used for early stopping
+    greater_is_better: bool = field(default=True)  # used for early stopping
+    fp16: bool = field(
+        default=False,
+        metadata={"help": "Whether to use fp16 (mixed) precision instead of 32-bit"},
+    )
 
     def __post_init__(self):
         super().__post_init__()
@@ -84,6 +91,8 @@ class CrmmTrainingArguments(TrainingArguments):
             'cat': True if 'cat' in self.modality else False,
             'text': True if 'text' in self.modality else False,
         }
+        self.text_cols = self.text_cols.split(',')
+        self.cat_cols = self.cat_cols.split(',')
 
 
 @dataclass
