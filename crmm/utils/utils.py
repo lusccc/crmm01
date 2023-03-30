@@ -386,3 +386,10 @@ def dict_to_obj(cls, d, **kwargs):
     for key, value in d.items():
         setattr(obj, key, value)
     return obj
+
+
+def check_dict(cls, obj):
+    if isinstance(obj, dict):
+        obj = dict_to_obj(cls, obj)
+    return obj
+

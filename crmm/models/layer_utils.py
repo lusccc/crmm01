@@ -5,6 +5,18 @@ from torch.nn import CrossEntropyLoss, MSELoss
 from torchviz import make_dot
 
 
+def get_classifier(input_dim, n_class):
+    return nn.Sequential(
+        nn.Linear(input_dim, 256),
+        nn.ReLU(),
+        nn.Dropout(p=0.5),
+        nn.Linear(256, 128),
+        nn.ReLU(),
+        nn.BatchNorm1d(128),
+        nn.Linear(128, n_class),
+    )
+
+
 class MLP(nn.Module):
     """mlp can specify number of hidden layers and hidden layer channels"""
 

@@ -1,17 +1,16 @@
 import json
+import logging as syslogging
+import os
+import random
+import string
+from datetime import datetime
 
 import torch
 from transformers.utils import logging
-import logging as syslogging
-import os
-import string
-from datetime import datetime
-import random
 
-from arguments import CrmmTrainingArguments
-from models import params_exposed_dbn
-from utils import utils
-from utils.log_handler import LogFormatHandler, ColorFormatter
+from .arguments import CrmmTrainingArguments
+from .utils import utils
+from .utils.log_handler import ColorFormatter
 
 logger = logging.get_logger('transformers')
 
@@ -75,7 +74,7 @@ def setup(exp_args: CrmmTrainingArguments):
 
 
     # Save configuration as a (pretty) json file
-    with open(os.path.join(exp_args.output_dir, 'configuration.json'), 'w') as f:
+    with open(os.path.join(exp_args.output_dir, 'training_arguments.json'), 'w') as f:
         json.dump(exp_args.to_sanitized_dict(), f, indent=4, sort_keys=True)
 
     logger.info("Stored configuration file in '{}'".format(exp_args.output_dir))

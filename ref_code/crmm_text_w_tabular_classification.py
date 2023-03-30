@@ -172,7 +172,7 @@ class MultimodalDataTrainingArguments:
 
 
 # ### Here are the data and training parameters we will use.
-# For model we can specify any supported HuggingFace model classes (see README for more details) as well as any AutoModel that are from the supported model classes. For the data specifications, we need to specify a dictionary that specifies which columns are the `text` columns, `numerical feature` columns, `categorical feature` column, and the `label` column. If we are doing classification, we can also specify what each of the labels means in the label column through the `label list`. We can also specifiy these columns using a path to a json file with the argument `column_info_path` to `MultimodalDataTrainingArguments`.
+# For model we can specify any supported HuggingFace model classes (see README for more details) as well as any AutoModel that are from the supported model classes. For the data specifications, we need to specify a dictionary that specifies which columns are the `text` columns, `numerical feature` columns, `categorical feature` column, and the `label` column. If we are doing classification, we can also specify what each of the labels means in the label column through the `label list`. We can also specifiy these columns using a path to a json file with the argument `column_info_path` to `MultimodalDataArguments`.
 
 # In[19]:
 

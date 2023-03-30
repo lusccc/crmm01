@@ -1,0 +1,6 @@
+crmm
+data/cr_sec_6
+main_runner.py
+
+rsync -avh /home/lsc/pyprojs/credit_rating_multi_modal/{crmm,data/cr_sec_6,main_runner.py} /mnt/e/Users/lsc/Documents/MEGA/code/crmm
+

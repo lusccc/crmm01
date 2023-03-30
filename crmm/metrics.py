@@ -1,3 +1,4 @@
+import numpy as np
 from scipy.special import softmax
 from sklearn.metrics import (
     auc,
@@ -5,11 +6,12 @@ from sklearn.metrics import (
     roc_auc_score,
     f1_score,
     confusion_matrix,
-    matthews_corrcoef, )
+)
 from transformers import EvalPrediction
-import numpy as np
 from transformers.utils import logging
+
 logger = logging.get_logger('transformers')
+
 
 def calc_classification_metrics(p: EvalPrediction):
     pred_labels = np.argmax(p.predictions[0], axis=1)
@@ -30,8 +32,7 @@ def calc_classification_metrics(p: EvalPrediction):
                   'pr_auc': pr_auc,
                   'recall': recalls[ix].item(),
                   'precision': precisions[ix].item(), 'f1': fscore[ix].item(),
-                  'tn': tn.item(), 'fp': fp.item(), 'fn': fn.item(), 'tp': tp.item()
-                  }
+                  'tn': tn.item(), 'fp': fp.item(), 'fn': fn.item(), 'tp': tp.item()}
     else:
         acc = (pred_labels == labels).mean()
         f1 = f1_score(y_true=labels, y_pred=pred_labels, average=None)

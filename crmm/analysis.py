@@ -4,14 +4,13 @@ by showing confusion matrix, accuracy, recall, precision etc.
 """
 
 import math
-import sys
-from datetime import datetime
 
 import matplotlib.pyplot as plt
 import numpy as np
 from sklearn import metrics
 from tabulate import tabulate
 from transformers.utils import logging
+
 logger = logging.get_logger('transformers')
 
 def acc_top_k(predictions, y_true):
