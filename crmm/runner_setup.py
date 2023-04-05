@@ -22,7 +22,6 @@ def setup(exp_args: CrmmTrainingArguments):
     Returns:
         config: configuration dictionary
     """
-    torch.set_num_threads(12)
     initial_timestamp = datetime.now()
     root_dir = exp_args.root_dir
     if not os.path.isdir(root_dir):
@@ -78,5 +77,10 @@ def setup(exp_args: CrmmTrainingArguments):
         json.dump(exp_args.to_sanitized_dict(), f, indent=4, sort_keys=True)
 
     logger.info("Stored configuration file in '{}'".format(exp_args.output_dir))
+
+    if exp_args.task == 'pretrain':
+        # save pretraing model path to text file, hence can be continuous trained in shell
+        with open("pretrain_path_transit.txt", "w") as file:
+            file.write(exp_args.output_dir)
 
     return exp_args

@@ -11,10 +11,10 @@ class CrmmTrainingArguments(TrainingArguments):
     # !!!!OURS!!!!
     report_to: str = field(default='wandb')
     root_dir: str = field(default='./exps', metadata={"help": "parent dir of output_dir"})
-    task: str = field(default="fine_tune", metadata={"help": "", 'choices': TASK})
-    use_modality: str = field(default="cat,num,text", metadata={"help": "used in multi dbn"})
-    pretrained_model_dir: str = field( default='exps/pretrain_2023-03-30_10-45-16_Nxt/output',  metadata={"help": ""})
-    patience: int = field(default=100, metadata={"help": ""})
+    task: str = field(default="pretrain", metadata={"help": "", 'choices': TASK})
+    use_modality: str = field(default="num,cat,text", metadata={"help": "used in multi dbn"})
+    pretrained_model_dir: str = field(default='exps/pretrain_2023-04-02_09-08-31_YFE/output', metadata={"help": ""})
+    patience: int = field(default=1000, metadata={"help": ""})
 
     # @@@@@@@@@@ BELOW ARE HUGGINGFACE ARGS
     # output_dir and logging_dir will be auto set in runner_setup.setup
@@ -32,14 +32,14 @@ class CrmmTrainingArguments(TrainingArguments):
         default=False, metadata={"help": "Remove columns not required by the model when using an nlp.Dataset."}
     )
     # @@@@@@@@@@ num_train_epochs
-    num_train_epochs: float = field(default=100, metadata={"help": "Total number of training epochs to perform."})
+    num_train_epochs: float = field(default=1, metadata={"help": "Total number of training epochs to perform."})
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
     # @@@@@@@@@ per_device_train_batch_size, 7 for dbn train
-    per_device_train_batch_size: int = field(default=15, metadata={
+    per_device_train_batch_size: int = field(default=300, metadata={
         "help": "Batch size per GPU/TPU core/CPU for training."})
     evaluation_strategy: Union[IntervalStrategy, str] = field(default="epoch", metadata={
-        "help": "The evaluation strategy to use."}, )
+        "help": "The evaluation strategy to use."}, )  # metric will be checked in early-stopping
     dataloader_num_workers: int = field(default=16, metadata={
         "help": ("Number of subprocesses to use for data loading (PyTorch only). 0 means that the data will be loaded"
                  " in the main process.")})
@@ -53,7 +53,7 @@ class CrmmTrainingArguments(TrainingArguments):
     auto_find_batch_size: bool = field(default=True, metadata={
         "help": ("Whether to automatically decrease the batch size in half and rerun the training loop again each time"
                  " a CUDA Out-of-Memory was reached")})
-    # metric_for_best_model: str = field(default='loss')  # used for early stopping; TODO or loss
+    # metric_for_best_model: str = field(default='loss')  # used for early stopping;
     greater_is_better: bool = field(default=False)  # used for early stopping
     fp16: bool = field(
         default=not no_cuda,
@@ -61,9 +61,9 @@ class CrmmTrainingArguments(TrainingArguments):
     )
 
     # PyTorch 2.0 specifics
-    bf16: bool = field(default=True, metadata={})
-    torch_compile: bool = field(default=False, metadata={})
-    optim: str = field(default='adamw_torch_fused', metadata={})
+    # bf16: bool = field(default=True, metadata={})
+    # torch_compile: bool = field(default=False, metadata={})
+    # optim: str = field(default='adamw_torch_fused', metadata={})
 
     def __post_init__(self):
         super().__post_init__()
@@ -73,8 +73,11 @@ class CrmmTrainingArguments(TrainingArguments):
 
 @dataclass
 class BertModelArguments:
-    bert_model_name: str = field(default='bert-base-uncased', metadata={
+    # prajjwal1/bert-tiny bert-base-uncased
+    bert_model_name: str = field(default='prajjwal1/bert-tiny', metadata={
         "help": "Path to pretrained model or model identifier from huggingface.co/models"})
+    max_seq_length: int = field(default=512, metadata={
+        "help": "The maximum length (in number of tokens) for the inputs to the transformer model"})
     config_name: Optional[str] = field(default=None, metadata={
         "help": "Pretrained config name or path if not the same as model_name"})
     cache_dir: Optional[str] = field(default='./exps/model_config_cache', metadata={
@@ -94,6 +97,3 @@ class MultimodalDataArguments:
     numerical_transformer_method: str = field(default='yeo_johnson', metadata={
         'help': 'sklearn numerical transformer to preprocess numerical data',
         'choices': ['yeo_johnson', 'box_cox', 'quantile_normal', 'standard', 'none']})
-
-
-

@@ -11,8 +11,8 @@ from sec_edgar_text.utils import logger, storage_toplevel_directory, args, date_
 
 MAX_FILES_IN_SUBDIRECTORY = 1000
 def main():
-    # query_data = pd.read_csv('corporate_rating_with_cik.csv')[['Symbol', 'Date', 'CIK']]
-    query_data = pd.read_csv('../../data/cr_sec_ori/corp_rating_sec_df_na.csv')[['Symbol', 'Date', 'CIK']]
+    query_data = pd.read_csv('corporate_rating_with_cik.csv')[['Symbol', 'Date', 'CIK']]
+    # query_data = pd.read_csv('../../data/cr_sec_ori/corp_rating_sec_df_na.csv')[['Symbol', 'Date', 'CIK']]
 
     companies = query_data.loc[:]
     storage_subdirectory_number = 1

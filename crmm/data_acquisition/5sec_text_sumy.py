@@ -5,7 +5,7 @@ import pandas as pd
 from keybert import KeyBERT
 from tqdm import tqdm
 
-from summa_score_sentences import summarize
+# from summa_score_sentences import summarize
 
 from sumy.parsers.html import HtmlParser
 from sumy.parsers.plaintext import PlaintextParser
@@ -19,6 +19,12 @@ from sumy.utils import get_stop_words
 
 LANGUAGE = "english"
 SENTENCES_COUNT = 2
+
+"""
+make sure you have aleady done below:
+import nltk
+nltk.download('punkt')
+"""
 
 
 def extract_important_sent(txts, pno):
@@ -49,7 +55,7 @@ if __name__ == '__main__':
     # for index, row in data_df.iterrows():
     #     txt = row['secText']
 
-    processes = 12
+    processes = 1
     lock = Lock()
 
     num = len(data_df)

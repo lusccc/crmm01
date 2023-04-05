@@ -12,25 +12,23 @@ class LogFormatHandler(logging.StreamHandler):
 
 
 class ColorFormatter(logging.Formatter):
-    # https://stackoverflow.com/questions/384076/how-can-i-color-python-logging-output
-    # https://github.com/herzog0/best_python_logger
-    green = "\x1b[1;32m"
-    grey = "\x1b[38;20m"
-    yellow = "\x1b[33;20m"
-    red = "\x1b[31;20m"
-    bold_red = "\x1b[31;1m"
+    green = "\x1b[32m"
+    yellow = "\x1b[33m"
+    red = "\x1b[31m"
+    blue = "\x1b[34m"
+    bold = "\x1b[1m"
     reset = "\x1b[0m"
-    format = "[%(asctime)s  - %(levelname)s - (%(filename)s:%(lineno)d)]: %(message)s"
+    format = bold + blue + "%(asctime)s [%(levelname).1s] (%(filename)s:%(lineno)d):" + reset + " %(message)s"
 
     FORMATS = {
-        logging.DEBUG: grey + format + reset,
+        logging.DEBUG: yellow + format + reset,
         logging.INFO: green + format + reset,
         logging.WARNING: yellow + format + reset,
         logging.ERROR: red + format + reset,
-        logging.CRITICAL: bold_red + format + reset
+        logging.CRITICAL: red + format + reset
     }
 
     def format(self, record):
         log_fmt = self.FORMATS.get(record.levelno)
-        formatter = logging.Formatter(log_fmt)
+        formatter = logging.Formatter(log_fmt, "%Y-%m-%d %H:%M:%S")
         return formatter.format(record)

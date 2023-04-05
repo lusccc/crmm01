@@ -4,8 +4,7 @@ import numpy as np
 n_class = 6
 
 # data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv')
-data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_summarized_kw_sec_text.csv')
-data_df = data_df.set_index('Id')
+data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_summarized_kw_sec_text.csv', index_col=0)
 # data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv',)
 # data_df.rename(columns={data_df.columns[0]: 'id'}, inplace=True)
 print()

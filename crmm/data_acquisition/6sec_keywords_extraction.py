@@ -21,7 +21,7 @@ if __name__ == '__main__':
     torch.multiprocessing.set_start_method('spawn')
     data_df = pd.read_csv('../../data/cr_sec_ori/corporate_rating_with_cik_and_summarized_sec_text.csv', index_col=0)
 
-    processes = 4
+    processes = 6
     ctx = torch.multiprocessing.get_context("spawn")
     process_pool = ctx.Pool(processes=processes, )
 

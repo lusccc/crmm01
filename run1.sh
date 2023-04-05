@@ -2,8 +2,6 @@ WANDB_PROJECT=crmm
 
 
 no_cuda='false'
-# task='pretrain_multi_modal_dbn'
-# task='fine_tune_multi_modal_dbn_classification'
 task='fine_tune_multi_modal_dbn_classification_scratch'
 
 #modalities='num,cat,text'
@@ -13,18 +11,16 @@ task='fine_tune_multi_modal_dbn_classification_scratch'
 modality='text'
 
 
-# use_rbm_for_text='true' # true
-use_rbm_for_text='false' # false
 
-#pretrained_multi_modal_dbn_model_dir='none'
-pretrained_multi_modal_dbn_model_dir='exps/pretrain_multi_modal_dbn_2023-03-13_14-05-48_QDW/output'
+#pretrained_model_dir='none'
+pretrained_model_dir='exps/pretrain_multi_modal_dbn_2023-03-13_14-05-48_QDW/output'
 
-if [ "$task" = "pretrain_multi_modal_dbn" ]; then
-  per_device_train_batch_size=7
-elif [ "$task" = "fine_tune_multi_modal_dbn_classification" ]; then
-  per_device_train_batch_size=91
-elif [ "$task" = "fine_tune_multi_modal_dbn_classification_scratch" ]; then
-  per_device_train_batch_size=61
+if [ "$task" = "pretrain" ]; then
+  per_device_train_batch_size=1000
+elif [ "$task" = "fine_tune" ]; then
+  per_device_train_batch_size=1000
+elif [ "$task" = "fine_tune_from_scratch" ]; then
+  per_device_train_batch_size=1000
 else
   per_device_train_batch_size=1000
 fi

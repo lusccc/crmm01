@@ -22,16 +22,18 @@ num_cols = ['currentRatio', 'quickRatio', 'cashRatio', 'daysOfSalesOutstanding',
             'debtRatio', 'effectiveTaxRate', 'freeCashFlowOperatingCashFlowRatio', 'freeCashFlowPerShare',
             'cashPerShare', 'companyEquityMultiplier', 'ebitPerRevenue', 'enterpriseValueMultiple',
             'operatingCashFlowPerShare', 'operatingCashFlowSalesRatio', 'payablesTurnover']
-used_cols = ['Rating'] + num_cols
+# used_cols = ['Rating'] + num_cols
+used_cols = slice(None, None, None)
 # Training time:
 train_data = TabularDataset('../data/cr_sec_6/train.csv')[used_cols]  # can be local CSV file as well, returns Pandas DataFrame
 val_data = TabularDataset('../data/cr_sec_6/val.csv')[used_cols]  # can be local CSV file as well, returns Pandas DataFrame
 # train_data = train_data.head(500)  # subsample for faster demo
-print(train_data.head())
+# print(train_data.head())
 label = 'Rating'  # specifies which column do we want to predict
 save_path = 'ag_models/'  # where to save trained models
 # TODO NO val set, how to determine stop training
-predictor = TabularPredictor(label=label, path=save_path, ).fit(train_data, tuning_data=val_data, num_cpus=24)
+# predictor = TabularPredictor(label=label, path=save_path, ).fit(train_data, tuning_data=val_data, num_cpus=24)
+predictor = TabularPredictor(label=label, path=save_path, ).fit(train_data, tuning_data=None, num_cpus=24)
 print()
 
 # NOTE: Default settings above are intended to ensure reasonable runtime at the cost of accuracy. To maximize predictive accuracy, do this instead:
@@ -39,7 +41,8 @@ print()
 results = predictor.fit_summary(show_plot=True)
 
 # Inference time:
-test_data = TabularDataset('../data/cr_sec_6/test.csv')  # another Pandas DataFrame
+# test_data = TabularDataset('../data/cr_sec_6/test.csv')  # another Pandas DataFrame
+test_data = TabularDataset('../data/cr_sec_6/val.csv')  # another Pandas DataFrame
 y_test = test_data[label]
 test_data = test_data.drop(labels=[label],
                            axis=1)  # delete labels from test data since we wouldn't have them in practice

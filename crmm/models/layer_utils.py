@@ -9,7 +9,7 @@ def get_classifier(input_dim, n_class):
     return nn.Sequential(
         nn.Linear(input_dim, 256),
         nn.ReLU(),
-        nn.Dropout(p=0.5),
+        nn.Dropout(p=0.2),
         nn.Linear(256, 128),
         nn.ReLU(),
         nn.BatchNorm1d(128),

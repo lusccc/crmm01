@@ -70,13 +70,18 @@ class MultimodalData:
         # TODO manually construct FeatureMetadata
         # note 'RF': {} is just a placeholder, we don't actually use RF. but we want to transform feature after `fit`
         # predictor = TabularPredictor(label=self.label_col).fit(self.raw_train_data, hyperparameters={'RF': {}})
-        predictor = TabularPredictor.load("AutogluonModels/ag-20230310_064518/")
+        predictor = TabularPredictor.load("AutogluonModels/ag-20230331_143023/")
         tfm_train_feats = predictor.transform_features(self.raw_train_data)
         tfm_test_feats = predictor.transform_features(self.raw_test_data)
         tfm_val_feats = predictor.transform_features(self.raw_val_data) if self.has_val else None
 
         # -----NUM FEATURES
-        # ['currentRatio', 'quickRatio', 'cashRatio', 'daysOfSalesOutstanding', 'netProfitMargin', 'pretaxProfitMargin', 'grossProfitMargin', 'operatingProfitMargin', 'returnOnAssets', 'returnOnCapitalEmployed', 'returnOnEquity', 'assetTurnover', 'fixedAssetTurnover', 'debtEquityRatio', 'debtRatio', 'effectiveTaxRate', 'freeCashFlowOperatingCashFlowRatio', 'freeCashFlowPerShare', 'cashPerShare', 'companyEquityMultiplier', 'ebitPerRevenue', 'enterpriseValueMultiple', 'operatingCashFlowPerShare', 'operatingCashFlowSalesRatio', 'payablesTurnover']
+        # ['currentRatio', 'quickRatio', 'cashRatio', 'daysOfSalesOutstanding', 'netProfitMargin',
+        # 'pretaxProfitMargin', 'grossProfitMargin', 'operatingProfitMargin', 'returnOnAssets',
+        # 'returnOnCapitalEmployed', 'returnOnEquity', 'assetTurnover', 'fixedAssetTurnover', 'debtEquityRatio',
+        # 'debtRatio', 'effectiveTaxRate', 'freeCashFlowOperatingCashFlowRatio', 'freeCashFlowPerShare',
+        # 'cashPerShare', 'companyEquityMultiplier', 'ebitPerRevenue', 'enterpriseValueMultiple',
+        # 'operatingCashFlowPerShare', 'operatingCashFlowSalesRatio', 'payablesTurnover']
         num_transformer = self.get_num_transformer()
         num_cols = self.get_cols_of('num', predictor)
         get_num_preprocessed = lambda df: df.loc[:, num_cols].fillna(df.loc[:, num_cols].median())
@@ -135,7 +140,7 @@ class MultimodalData:
     def get_datasets(self):
         return self.train_dataset, self.test_dataset, self.val_dataset
 
-    def get_cat_num_and_emb_dim(self, equal_dim=32):
+    def get_cat_num_and_emb_dim(self, equal_dim=None):
         all_cat_feats = pd.concat([self.train_cat_feats.items, self.test_cat_feats.items, self.val_cat_feats.items])
         cat_nums = list(all_cat_feats.nunique().values)
         if equal_dim:

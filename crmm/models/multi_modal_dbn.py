@@ -21,6 +21,7 @@ class MultiModalModelConfig(PretrainedConfig):
                  cat_emb_dims=0,
                  use_modality=None,
                  bert_params=None,
+                 bert_model_name=None,
                  pretrained=False,
                  **kwargs):
         super().__init__(**kwargs)
@@ -38,16 +39,18 @@ class MultiModalModelConfig(PretrainedConfig):
 
         self.use_modality = use_modality
         self.bert_params = bert_params
+        self.bert_model_name = bert_model_name
         self.pretrained = pretrained
 
 
 class MultiModalDBNPretrainedModel(PreTrainedModel):
     config_class = MultiModalModelConfig
+    # make it feasible load pretrained MultiModalDBN in MultiModalForClassification
     base_model_prefix = "mmdbn"
 
 
 class MultiModalDBN(MultiModalDBNPretrainedModel):
-    pretrained: bool = False
+    # pretrained: bool = False
 
     def __init__(self, config):
         super().__init__(config)
@@ -56,18 +59,13 @@ class MultiModalDBN(MultiModalDBNPretrainedModel):
         self.use_modality = self.config.use_modality
         self.n_modality = len(self.use_modality)
         self.n_labels = self.config.n_labels
-        MultiModalDBN.pretrained = self.config.pretrained
+        self.pretrained = self.config.pretrained
 
         self.pretrain_target = None
 
-        self.rbm_factory = RBMFactory(modalities=self.use_modality,
-                                      mm_model_config=self.config,
-                                      bert_params=self.config.bert_params,
-                                      pretrained=self.pretrained)
+        self.rbm_factory = RBMFactory(mm_model_config=self.config)
         self.rbms = self.rbm_factory.get_rbms()
-
-        # it is necessary to register rbm as module
-        self._modules.update(self.rbms)
+        self.rbms = nn.ModuleDict(self.rbms)
 
     def set_pretrain_target(self, pretrain_target):
         logger.info(f'set pretrain_target: {pretrain_target}')
@@ -80,13 +78,12 @@ class MultiModalDBN(MultiModalDBNPretrainedModel):
                 rbm_loss = self.rbms[modality](inputs[modality])
                 loss += rbm_loss
         elif self.pretrain_target == 'joint_rbm':
-            hidden_outputs = []
+            hidden_outputs = {}
             for modality in self.use_modality:
                 hidden_output = self.rbms[modality].extra_features_step(inputs[modality])
                 # should be DETACHED then passed to joint_rbm, according to the RBM training method
-                hidden_outputs.append(hidden_output.detach())
-            cat_hidden_outputs = torch.cat(hidden_outputs, dim=1)
-            loss = self.rbms['joint'](cat_hidden_outputs)
+                hidden_outputs[modality] = hidden_output.detach()
+            loss = self.rbms['joint'](hidden_outputs)
         else:
             loss = None
             raise ValueError(f'pretrain_target {self.pretrain_target} not supported')
@@ -98,13 +95,12 @@ class MultiModalDBN(MultiModalDBNPretrainedModel):
             modality = self.use_modality[0]
             features = self.rbms[modality](inputs[modality])
         elif self.n_modality > 1:
-            hidden_outputs = []
+            hidden_outputs = {}
             for modality in self.use_modality:
                 hidden_output = self.rbms[modality](inputs[modality])
                 # don't need to detach, since it is not pretraining
-                hidden_outputs.append(hidden_output)
-            cat_hidden_outputs = torch.cat(hidden_outputs, dim=1)
-            features = self.rbms['joint'](cat_hidden_outputs)
+                hidden_outputs[modality] = hidden_output
+            features = self.rbms['joint'](hidden_outputs)
         else:
             features = None
             raise ValueError(f'number of modality {self.n_modality} not supported')

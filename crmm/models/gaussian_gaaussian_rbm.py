@@ -15,13 +15,16 @@ class GaussianGaussianRBM(nn.Module):
     loss is calculated between v0 and v1
     """
 
-    def __init__(self, visible_units, hidden_units, dropout=0.5, encoder=None, pretrained=False):
+    def __init__(self, name, visible_units, hidden_units, dropout=0.5, encoder=None, pretrained=False):
         super(GaussianGaussianRBM, self).__init__()
+        self.name = name
         self.visible_units = visible_units
         self.hidden_units = hidden_units
         self.dropout = dropout
         self.encoder = encoder
         self.pretrained = pretrained
+
+        self.visible_input_bn = nn.BatchNorm1d(self.visible_units)
 
         self.W = nn.Parameter(torch.randn(hidden_units, visible_units) * 0.01)
         self.b_v = nn.Parameter(torch.zeros(visible_units))
@@ -30,29 +33,28 @@ class GaussianGaussianRBM(nn.Module):
         self.tau_h = nn.Parameter(torch.ones(hidden_units), requires_grad=True)
 
     def visible_to_hidden(self, v):
-        h_means = F.linear(v / self.sigma_v ** 2, self.W, self.b_h)
+        v = self.visible_input_bn(v)
+        h_means = F.relu(F.linear(v / self.sigma_v ** 2, self.W, self.b_h))
         return h_means
 
     def hidden_to_visible(self, h):
-        v_means = F.linear(h / self.tau_h ** 2, self.W.t(), self.b_v)
+        v_means = F.relu(F.linear(h / self.tau_h ** 2, self.W.t(), self.b_v))
         return v_means
 
     def check_x(self, x):
-        """
-        Check if x is a dict or not. If not, convert it to a dict.
-        For the purpose of passing to forward function more easily.
-        """
-        if isinstance(x, dict):
-            return x
-        else:
+        if self.name in ['num', 'cat', 'joint']:
+            # these feature extractors forward accept `x` as parameters
             return {'x': x}
+        elif self.name == 'text':
+            # text feature extractor forward accept `input_ids,attention_mask` as parameters, already is dict
+            return x
 
     def pretrain_step(self, x):
         """
         Pretrain a step of RBM. Only called in pretraining!
         """
         x = self.check_x(x)  # is a dict! to easily pass to encoder forward!
-        x = self.encoder(**x) if self.encoder else x['x']
+        x = self.encoder(**x)
 
         h0_means = self.visible_to_hidden(x)
         h0 = h0_means + torch.randn_like(h0_means) * self.tau_h
@@ -77,7 +79,7 @@ class GaussianGaussianRBM(nn.Module):
         Get hidden value (used as feature).
         """
         x = self.check_x(x)  # is a dict! to easily pass to encoder forward!
-        x = self.encoder(**x) if self.encoder else x['x']
+        x = self.encoder(**x)
         h0_means = self.visible_to_hidden(x)
         return h0_means
 
