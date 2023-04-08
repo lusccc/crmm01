@@ -18,7 +18,8 @@ from sumy.utils import get_stop_words
 # https://blog.csdn.net/Together_CZ/article/details/107628462
 
 LANGUAGE = "english"
-SENTENCES_COUNT = 2
+# SENTENCES_COUNT = 2
+SENTENCES_COUNT = 10
 
 """
 make sure you have aleady done below:
@@ -55,7 +56,7 @@ if __name__ == '__main__':
     # for index, row in data_df.iterrows():
     #     txt = row['secText']
 
-    processes = 1
+    processes = 10
     lock = Lock()
 
     num = len(data_df)

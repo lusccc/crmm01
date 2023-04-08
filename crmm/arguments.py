@@ -36,7 +36,7 @@ class CrmmTrainingArguments(TrainingArguments):
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
     # @@@@@@@@@ per_device_train_batch_size, 7 for dbn train
-    per_device_train_batch_size: int = field(default=300, metadata={
+    per_device_train_batch_size: int = field(default=1000, metadata={
         "help": "Batch size per GPU/TPU core/CPU for training."})
     evaluation_strategy: Union[IntervalStrategy, str] = field(default="epoch", metadata={
         "help": "The evaluation strategy to use."}, )  # metric will be checked in early-stopping
@@ -53,8 +53,8 @@ class CrmmTrainingArguments(TrainingArguments):
     auto_find_batch_size: bool = field(default=True, metadata={
         "help": ("Whether to automatically decrease the batch size in half and rerun the training loop again each time"
                  " a CUDA Out-of-Memory was reached")})
-    # metric_for_best_model: str = field(default='loss')  # used for early stopping;
-    greater_is_better: bool = field(default=False)  # used for early stopping
+    # metric_for_best_model: str = field(default='acc')  # used for early stopping;
+    # greater_is_better: bool = field(default=False)  # used for early stopping
     fp16: bool = field(
         default=not no_cuda,
         metadata={"help": "Whether to use fp16 (mixed) precision instead of 32-bit"},
@@ -63,12 +63,20 @@ class CrmmTrainingArguments(TrainingArguments):
     # PyTorch 2.0 specifics
     # bf16: bool = field(default=True, metadata={})
     # torch_compile: bool = field(default=False, metadata={})
-    # optim: str = field(default='adamw_torch_fused', metadata={})
+    optim: str = field(default='adamw_torch_fused', metadata={})
 
     def __post_init__(self):
         super().__post_init__()
         if isinstance(self.use_modality, str):
             self.use_modality = [m.strip() for m in self.use_modality.split(',')]
+
+        if self.task == 'pretrain':
+            self.metric_for_best_model = 'loss'
+            self.greater_is_better = False
+            self.evaluation_strategy = 'no'
+        else:
+            self.metric_for_best_model = 'acc'
+            self.greater_is_better = True
 
 
 @dataclass

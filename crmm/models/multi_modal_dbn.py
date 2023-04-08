@@ -16,12 +16,12 @@ class MultiModalModelConfig(PretrainedConfig):
     def __init__(self,
                  n_labels=0,
                  num_feat_dim=0,
-                 cat_feat_dim=0,
-                 n_cat=0,
+                 nunique_cat_nums=0,
                  cat_emb_dims=0,
                  use_modality=None,
                  bert_params=None,
                  bert_model_name=None,
+                 use_hf_pretrained_bert=False,
                  pretrained=False,
                  **kwargs):
         super().__init__(**kwargs)
@@ -30,16 +30,15 @@ class MultiModalModelConfig(PretrainedConfig):
         self.n_labels = n_labels
         # numerical feature dimension after num_transformer in dataset.crmm_data.MultimodalData.transform_features
         self.num_feat_dim = num_feat_dim
-        # category feature dimension after categorized in dataset.crmm_data.MultimodalData.transform_features
-        self.cat_feat_dim = cat_feat_dim
-        # category features count
-        self.n_cat = n_cat
-        # category feature embedding dimension, used in Embedding layer in models.emb_cat_feat.CatFeatureExtractor
+        # nunqiue of each cat col
+        self.nunique_cat_nums = nunique_cat_nums
+        # category feature embedding dimension of each cat col,
+        # used in Embedding layer in models.emb_cat_feat.CatFeatureExtractor
         self.cat_emb_dims = cat_emb_dims
-
         self.use_modality = use_modality
         self.bert_params = bert_params
         self.bert_model_name = bert_model_name
+        self.use_hf_pretrained_bert = use_hf_pretrained_bert
         self.pretrained = pretrained
 
 
@@ -102,7 +101,6 @@ class MultiModalDBN(MultiModalDBNPretrainedModel):
                 hidden_outputs[modality] = hidden_output
             features = self.rbms['joint'](hidden_outputs)
         else:
-            features = None
             raise ValueError(f'number of modality {self.n_modality} not supported')
         return features
 

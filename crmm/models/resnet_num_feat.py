@@ -4,17 +4,16 @@ import torch.nn.functional as F
 
 
 class ResidualBlock(nn.Module):
-    def __init__(self, input_dim, hidden_dim, dropout_rate):
+    def __init__(self, input_dim, hidden_dim, dropout):
         super(ResidualBlock, self).__init__()
-
         self.fc1 = nn.Linear(input_dim, hidden_dim)
         self.bn1 = nn.BatchNorm1d(hidden_dim)
         self.relu1 = nn.ReLU()
-        self.dropout1 = nn.Dropout(p=dropout_rate)
+        self.dropout1 = nn.Dropout(p=dropout)
         self.fc2 = nn.Linear(hidden_dim, hidden_dim)
         self.bn2 = nn.BatchNorm1d(hidden_dim)
         self.relu2 = nn.ReLU()
-        self.dropout2 = nn.Dropout(p=dropout_rate)
+        self.dropout2 = nn.Dropout(p=dropout)
 
     def forward(self, x):
         residual = x
@@ -31,38 +30,20 @@ class ResidualBlock(nn.Module):
 
 
 class NumFeatureExtractor(nn.Module):
-    def __init__(self, input_dim, hidden_dims, output_dim, dropout_rate):
+    def __init__(self, input_dim, hidden_dims, dropout):
         super(NumFeatureExtractor, self).__init__()
-
-        # 输入层
-        self.input_layer = nn.Linear(input_dim, hidden_dims[0])
-
-        # 中间层
+        self.hidden_dims = hidden_dims
+        self.input_layer = nn.Linear(input_dim, self.hidden_dims[0])
         self.residual_blocks = nn.ModuleList()
-        for i in range(len(hidden_dims) - 1):
-            self.residual_blocks.append(ResidualBlock(hidden_dims[i], hidden_dims[i + 1], dropout_rate))
-
-        # 输出层
-        self.output_layer = nn.Linear(hidden_dims[-1], output_dim)
-
-        # 激活函数
-        self.activation = nn.ReLU()
+        for i in range(len(self.hidden_dims) - 1):
+            self.residual_blocks.append(ResidualBlock(self.hidden_dims[i], self.hidden_dims[i + 1], dropout))
 
     def forward(self, x):
         out = self.input_layer(x)
-        out = self.activation(out)
-
+        out = F.relu(out)
         for block in self.residual_blocks:
             out = block(out)
-
-        out = self.output_layer(out)
         return out
 
-    def loss_function(self, y_pred, y_true):
-        mse_loss = F.mse_loss(y_pred, y_true)
-        l1_reg_loss = torch.tensor(0., requires_grad=True).to(y_pred.device)
-        for name, param in self.named_parameters():
-            if 'weight' in name:
-                l1_reg_loss += torch.norm(param, 1)
-        total_loss = mse_loss + 0.0001 * l1_reg_loss
-        return total_loss
+    def get_output_dim(self):
+        return self.hidden_dims[-1]

@@ -2,6 +2,7 @@ import pandas as pd
 import numpy as np
 
 n_class = 6
+# n_class = 2
 
 # data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv')
 data_df = pd.read_csv('data/cr_sec_ori/corporate_rating_with_cik_and_summarized_kw_sec_text.csv', index_col=0)
@@ -21,6 +22,13 @@ elif n_class == 6:
         {'Rating': {'AAA': 0, 'AA': 0, 'A': 1, 'BBB': 2, 'BB': 3, 'B': 4, 'CCC': 5, 'CC': 5, 'C': 5, 'D': 5}}
     )
     data_labels = ['AA+', 'A', 'BBB', 'BB', 'B', 'CCC-']
+    data_labels = np.array(data_labels)
+elif n_class == 2:
+    dataset_name = 'cr_sec_2'
+    data_df = data_df.replace(
+        {'Rating': {'AAA': 1, 'AA': 1, 'A': 1, 'BBB': 1, 'BB': 0, 'B': 0, 'CCC': 0, 'CC': 0, 'C': 0, 'D': 0}}
+    )
+    data_labels = ['good', 'junk']
     data_labels = np.array(data_labels)
 
 seed = 3407  # !!!!!! USED TO RANDOM SHUFFLE

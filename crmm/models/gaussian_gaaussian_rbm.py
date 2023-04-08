@@ -80,6 +80,7 @@ class GaussianGaussianRBM(nn.Module):
         """
         x = self.check_x(x)  # is a dict! to easily pass to encoder forward!
         x = self.encoder(**x)
+        # TODO
         h0_means = self.visible_to_hidden(x)
         return h0_means
 

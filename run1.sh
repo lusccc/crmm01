@@ -1,35 +1,36 @@
-WANDB_PROJECT=crmm
-
-
-no_cuda='false'
-task='fine_tune_multi_modal_dbn_classification_scratch'
-
-#modalities='num,cat,text'
-#modalities='cat,text'
-# modalities='cat,num'
-#modalities='num'
+#modality='num,cat,text'
+#modality='num,cat'
+#modality='cat'
+#modality='num'
 modality='text'
+#scratch='no'
+scratch='yes'
 
+pre_epoch=10
+finetune_epoch=400
+patience=1000
 
+#bert_model='prajjwal1/bert-tiny'
+#bert_model='bert-base-uncased'
+#bert_model='nickmuchi/sec-bert-finetuned-finance-classification'
+bert_model='ProsusAI/finbert'
 
-#pretrained_model_dir='none'
-pretrained_model_dir='exps/pretrain_multi_modal_dbn_2023-03-13_14-05-48_QDW/output'
-
-if [ "$task" = "pretrain" ]; then
-  per_device_train_batch_size=1000
-elif [ "$task" = "fine_tune" ]; then
-  per_device_train_batch_size=1000
-elif [ "$task" = "fine_tune_from_scratch" ]; then
-  per_device_train_batch_size=1000
+if [ "$bert_model" = "bert-base-uncased" ] || [ "$bert_model" = "nickmuchi/sec-bert-finetuned-finance-classification" ] || [ "$bert_model" = "ProsusAI/finbert" ]
+then
+  batch_size=100
+elif [ "$bert_model" = "prajjwal1/bert-tiny" ]; then
+  batch_size=2000
 else
-  per_device_train_batch_size=1000
+  echo "Unknown bert_model value: $bert_model"
+  exit 1
 fi
 
-fp16='true'
-#fp16='false'
-num_train_epochs=150
-patience=100
+if [ "$scratch" = "yes" ]; then
+  python main_runner.py --task fine_tune_from_scratch --bert_model_name $bert_model --use_modality $modality --per_device_train_batch_size $batch_size --num_train_epochs $finetune_epoch --patience $patience
+else
+  python main_runner.py --task pretrain --bert_model_name $bert_model --use_modality $modality --per_device_train_batch_size $batch_size --num_train_epochs $pre_epoch --patience $patience
 
-python crmm/crmm_dbn_tabular_classification.py --modality ${modality} --task ${task} --no_cuda ${no_cuda} --use_rbm_for_text ${use_rbm_for_text}  --pretrained_multi_modal_dbn_model_dir ${pretrained_multi_modal_dbn_model_dir} --fp16 ${fp16} --per_device_train_batch_size ${per_device_train_batch_size} --num_train_epochs ${num_train_epochs} --patience ${patience} --numerical_transformer_method yeo_johnson --dataloader_num_workers 20
+  pretrain_model_path=$(head -n 1 'pretrain_path_transit.txt')
 
-#echo "python crmm/crmm_dbn_tabular_classification.py --modalities ${modalities} --task ${task} ${cuda} ${use_rbm_for_text}  --pretrained_multi_modal_dbn_model_dir ${pretrained_multi_modal_dbn_model_dir} ${fp16} --per_device_train_batch_size ${per_device_train_batch_size} --num_train_epochs ${num_train_epochs} --patience ${patience}"
+  python main_runner.py --task fine_tune --bert_model_name $bert_model --use_modality $modality --per_device_train_batch_size $batch_size --num_train_epochs $finetune_epoch --pretrained_model_dir $pretrain_model_path --patience $patience
+fi

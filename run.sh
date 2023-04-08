@@ -1,23 +1,25 @@
-#modality='num,cat,text'
-modality='num,cat'
+modality='num,cat,text'
+#modality='num,cat'
 #modality='cat'
 #modality='num'
 #modality='text'
 scratch='no'
-#scratch='no'
+#scratch='yes'
 
-batch_size=100
-pre_epoch=100
-finetune_epoch=400
-patience=100
+pre_epoch=5
+finetune_epoch=300
+patience=1000
 
 bert_model='prajjwal1/bert-tiny'
 #bert_model='bert-base-uncased'
+#bert_model='nickmuchi/sec-bert-finetuned-finance-classification'
+#bert_model='ProsusAI/finbert'
 
-if [ "$bert_model" = "bert-base-uncased" ]; then
+if [ "$bert_model" = "bert-base-uncased" ] || [ "$bert_model" = "nickmuchi/sec-bert-finetuned-finance-classification" ] || [ "$bert_model" = "ProsusAI/finbert" ]
+then
   batch_size=100
 elif [ "$bert_model" = "prajjwal1/bert-tiny" ]; then
-  batch_size=2000
+  batch_size=300
 else
   echo "Unknown bert_model value: $bert_model"
   exit 1

@@ -4,7 +4,8 @@ import pandas as pd
 import torch
 from keybert import KeyBERT
 
-keywords_num = 20
+# keywords_num = 20
+keywords_num = 100
 def extract_sec_keywords(txts, pno):
     res = []
     kw_model = KeyBERT()

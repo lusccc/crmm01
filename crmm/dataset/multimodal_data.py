@@ -140,23 +140,24 @@ class MultimodalData:
     def get_datasets(self):
         return self.train_dataset, self.test_dataset, self.val_dataset
 
-    def get_cat_num_and_emb_dim(self, equal_dim=None):
+    #  nunqiue of each cat col, and emb dim of each cat col
+    def get_nunique_cat_nums_and_emb_dim(self, equal_dim=None):
         all_cat_feats = pd.concat([self.train_cat_feats.items, self.test_cat_feats.items, self.val_cat_feats.items])
-        cat_nums = list(all_cat_feats.nunique().values)
+        nunique_cat_nums = list(all_cat_feats.nunique().values)
         if equal_dim:
-            emb_dims = [equal_dim for _ in cat_nums]
+            cat_emb_dims = [equal_dim for _ in nunique_cat_nums]
         else:
-            emb_dims = []
-            for cat_num in cat_nums:
+            cat_emb_dims = []
+            for cat_num in nunique_cat_nums:
                 if cat_num >= 300:
                     emb_dim = 32
                 elif 100 <= cat_num < 300:
                     emb_dim = 16
                 else:
                     emb_dim = 8
-                emb_dims.append(emb_dim)
+                cat_emb_dims.append(emb_dim)
         # return int, rather than numpy int64
-        return list(map(int, cat_nums)), list(map(int, emb_dims))
+        return list(map(int, nunique_cat_nums)), list(map(int, cat_emb_dims))
 
     def get_cols_of(self, modality, predictor=None):
         feat_meta = predictor.feature_metadata
