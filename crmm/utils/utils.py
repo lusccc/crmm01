@@ -11,10 +11,9 @@ import numpy as np
 import torch
 import xlrd
 import xlwt
+from logzero import logger
 from torchviz import make_dot
 from xlutils.copy import copy
-
-from logzero import logger
 
 
 def timer(func):
@@ -393,3 +392,15 @@ def check_dict(cls, obj):
         obj = dict_to_obj(cls, obj)
     return obj
 
+
+def numpy_to_string_2d(arr):
+    # 将数组转换为字符串，并去掉所有的换行符和空格
+    str_array = np.array2string(arr, separator=', ', max_line_width=np.inf)
+
+    # 去掉所有的左右方括号
+    str_array = str_array.replace('[[', '').replace(']]', '').strip()
+
+    # 替换内部的方括号，使每个数组的行成为输出字符串的一行
+    str_array = str_array.replace('], [', '\n')
+
+    return str_array

@@ -1,53 +1,54 @@
+import json
 import os
+import random
+from datetime import datetime
 
 import numpy as np
+import openpyxl
+import pandas as pd
+import torch
 import torchinfo
 from torch.utils.data import ConcatDataset
 from transformers import AutoTokenizer, Trainer, EarlyStoppingCallback, HfArgumentParser
+from transformers.utils import logging
 
 from crmm import runner_setup
 from crmm.arguments import BertModelArguments, MultimodalDataArguments, CrmmTrainingArguments
-from transformers.utils import logging
-
 from crmm.dataset.multimodal_data import MultimodalData
 from crmm.dataset.multimodal_dataset import MultimodalDatasetCollator
 from crmm.metrics import calc_classification_metrics
 from crmm.models.multi_modal_dbn import MultiModalModelConfig, MultiModalDBN, MultiModalForClassification
-from crmm.runner_callback import TrainerLoggerCallback, CrmmTrainerCallback
 
 logger = logging.get_logger('transformers')
 
 os.environ['COMET_MODE'] = 'DISABLED'
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 os.environ["TRANSFORMERS_OFFLINE"] = "1"
-
-
 # os.environ["WANDB_DISABLED"] = "true"
+
+# 设置随机种子
+seed = 3407
+torch.manual_seed(seed)
+np.random.seed(seed)
+random.seed(seed)
 
 
 def main(bert_model_args: BertModelArguments,
          data_args: MultimodalDataArguments,
          training_args: CrmmTrainingArguments):
+    training_args.seed = seed
     task = training_args.task
     # @@@@ 1. TABULAR COLUMNS
     dataset_name = data_args.dataset_name
-    if dataset_name in ['cr_sec', 'cr_sec_6']:
-        if dataset_name == 'cr_sec':
-            label_list = ['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'CC']
-        elif dataset_name == 'cr_sec_6':
-            label_list = ['AA+', 'A', 'BBB', 'BB', 'B', 'CCC-']
-        else:
-            label_list = None
-        # note: the num and cat cols will be automatically inferred in `data.crmm_data.MultimodalData`
-        column_info_dict = {
-            # 'text_cols': ['secText', 'secKeywords'],
-            'text_cols': ['secKeywords'],
-            # 'text_cols': ['secText'],
-            'label_col': 'Rating',
-            'label_list': label_list
-        }
-    else:
-        column_info_dict = None
+    label_list = np.load(os.path.join(data_args.data_path, 'label_list.npy'), allow_pickle=True)
+    # note: the num and cat cols will be automatically inferred in `data.crmm_data.MultimodalData`
+    column_info_dict = {
+        # 'text_cols': ['secText', 'secKeywords'],
+        'text_cols': ['secKeywords'],
+        # 'text_cols': ['secText'],
+        'label_col': 'Rating',
+        'label_list': label_list
+    }
     data_args.column_info = column_info_dict
 
     # @@@@ 2. DATASET
@@ -57,7 +58,7 @@ def main(bert_model_args: BertModelArguments,
                              data_args.column_info['text_cols'],
                              num_transform_method=data_args.numerical_transformer_method)
     train_dataset, test_dataset, val_dataset = mm_data.get_datasets()
-    n_labels = len(np.unique(train_dataset.labels))
+    n_labels = len(label_list)
     if task == 'pretrain':
         # if pretrain task, concat train and val to unsupervised train!
         train_dataset = ConcatDataset([train_dataset, val_dataset])
@@ -123,11 +124,70 @@ def main(bert_model_args: BertModelArguments,
         trainer = get_trainer(model)
         trainer.train()
         trainer.save_model()
-    logger.info(f"Best model path: {trainer.state.best_model_checkpoint}")
+
+    best_model_checkpoint = trainer.state.best_model_checkpoint
+    best_step = int(best_model_checkpoint.split("-")[-1]) if best_model_checkpoint else None
+    logger.info(f"Best model path: {best_model_checkpoint}")
     logger.info(f"Best metric value: {trainer.state.best_metric}")
 
     # @@@@ 5. EVALUATION
-    trainer.predict(test_dataset)
+    if task != 'pretrain':
+        val_best_results = trainer.evaluate(eval_dataset=val_dataset)
+        test_results = trainer.evaluate(eval_dataset=test_dataset)
+        if task == 'fine_tune':
+            with open(os.path.join(training_args.pretrained_model_dir, 'training_arguments.json')) as file:
+                training_arguments = json.load(file)
+            pretrain_batch_size = training_arguments['per_device_train_batch_size']
+            pretrain_epoch = training_arguments['num_train_epochs']
+        else:
+            pretrain_step = None
+            pretrain_batch_size = None
+            pretrain_epoch = None
+
+        basic_info = {
+            'dataset': data_args.dataset_name,
+            'data_path': data_args.data_path,
+            'bert_model': bert_model_args.bert_model_name,
+            'numerical': 'num' in training_args.use_modality,
+            'category': 'cat' in training_args.use_modality,
+            'text': 'text' in training_args.use_modality,
+            'pretrain_batch_size': pretrain_batch_size,
+            'pretrain_epoch': pretrain_epoch,
+            'fine_tune_best_step': best_step,
+            'fine_tune_batch_size': training_args.per_device_train_batch_size,
+            'fine_tune_epoch': training_args.num_train_epochs,
+        }
+
+        save_excel(val_best_results, test_results, basic_info, training_args.save_excel_path)
+
+
+def save_excel(val_best_results, test_results, basic_info, excel_path):
+    logger.info(f'** save results to {excel_path}')
+    val_data = {f'val_{k}': v for k, v in val_best_results.items()}
+    test_data = {f'test_{k}': v for k, v in test_results.items()}
+
+    if os.path.exists(excel_path):
+        book = openpyxl.load_workbook(excel_path)
+        writer = pd.ExcelWriter(excel_path, engine='openpyxl')
+        writer.book = book
+
+        if 'Sheet1' in book.sheetnames:
+            startrow = writer.sheets['Sheet1'].max_row
+        else:
+            startrow = 0
+
+    else:
+        writer = pd.ExcelWriter(excel_path, engine='openpyxl')
+        startrow = 0
+
+    data = {**{'Timestamp': datetime.now().strftime('%Y-%m-%d %H:%M:%S')},
+            **basic_info, **val_data, **test_data, }
+    df = pd.DataFrame([data])
+
+    df.to_excel(writer, index=False, header=(startrow == 0), startrow=startrow)
+
+    writer.save()
+    writer.close()
 
 
 if __name__ == '__main__':

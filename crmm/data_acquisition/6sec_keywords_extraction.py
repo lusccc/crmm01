@@ -1,12 +1,12 @@
+import argparse
 import itertools
 
 import pandas as pd
 import torch
 from keybert import KeyBERT
 
-# keywords_num = 20
-keywords_num = 100
-def extract_sec_keywords(txts, pno):
+
+def extract_sec_keywords(txts, keywords_num, pno):
     res = []
     kw_model = KeyBERT()
     for row_id, row in txts.iterrows():
@@ -19,10 +19,20 @@ def extract_sec_keywords(txts, pno):
 
 
 if __name__ == '__main__':
-    torch.multiprocessing.set_start_method('spawn')
-    data_df = pd.read_csv('../../data/cr_sec_ori/corporate_rating_with_cik_and_summarized_sec_text.csv', index_col=0)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--prev_step_sentences_num', type=int, default=10)
+    parser.add_argument('--keywords_num', type=int, default=20)
+    parser.add_argument('--dataset_name', type=str, default='cr')
+    args = parser.parse_args()
 
-    processes = 6
+    sentences_num = args.prev_step_sentences_num
+    keywords_num = args.keywords_num
+    dataset_name = args.dataset_name
+
+    torch.multiprocessing.set_start_method('spawn')
+    data_df = pd.read_csv(f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}.csv', index_col=0)
+
+    processes = 3
     ctx = torch.multiprocessing.get_context("spawn")
     process_pool = ctx.Pool(processes=processes, )
 
@@ -36,7 +46,7 @@ if __name__ == '__main__':
         print(f'{t}:{t + task_batch_size}')
         batch_tasks = data_df.loc[t:t + task_batch_size - 1]  # `loc` is Closed interval, hence -1
         multi_thread_tasks.append(process_pool.apply_async(extract_sec_keywords,
-                                                           (batch_tasks, pno),
+                                                           (batch_tasks, keywords_num, pno),
                                                            # callback=lambda x: pbar.update(task_batch_size),
                                                            ))
         pno += 1
@@ -50,6 +60,6 @@ if __name__ == '__main__':
         row_id, keywords = ranked
         data_df.at[row_id, 'secKeywords'] = keywords
 
-    data_df.to_csv('../../data/cr_sec_ori/corporate_rating_with_cik_and_summarized_kw_sec_text.csv')
+    data_df.to_csv(f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}_keywords{keywords_num}.csv')
 
 

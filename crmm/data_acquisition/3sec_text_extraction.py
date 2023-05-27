@@ -1,12 +1,11 @@
+import glob
 import itertools
 import re
+from datetime import datetime
 from multiprocessing import Pool, Lock
+from pathlib import Path
 
 import pandas as pd
-import glob
-from pathlib import Path
-from datetime import datetime
-
 from dateutil.relativedelta import relativedelta
 
 """
@@ -43,18 +42,7 @@ def remove_only_digit_line(my_string):
     return s3
 
 
-sec_res_txt = glob.glob('../../sec_res/**/**/*.txt', recursive=True)  # => ['2.txt', 'sub/3.txt']
-
-# corp_rating_df = pd.read_csv('../../data/cr_sec_ori/corporate_rating_with_cik.csv', )
-corp_rating_df = pd.read_csv('../../data/cr_sec_ori/corporate_rating_with_cik.csv', index_col=0)
-corp_rating_df['Item7A'] = ''
-corp_rating_df['Item7'] = ''
-corp_rating_df['Item2'] = ''
-corp_rating_df['Item1A'] = ''
-corp_rating_df['Item1'] = ''
-
-
-def process_sec_text(txts, ):
+def process_sec_text(txts, corp_rating_df, symbol_col, date_col, date_format):
     loc_item_txt = []
     for txt_file in txts:
         fname = Path(txt_file).name
@@ -66,9 +54,9 @@ def process_sec_text(txts, ):
         sec_report_date = datetime.strptime(sec_report_date, '%Y%m%d')
         # print(symbol, cik, sec_type, sec_report_date, item_type)
         if item_type in ['Item7A', 'Item7', 'Item2', 'Item1A', 'Item1']:
-            corp_rating_rec_df = corp_rating_df.loc[corp_rating_df['Symbol'] == symbol]
+            corp_rating_rec_df = corp_rating_df.loc[corp_rating_df[symbol_col] == symbol]
             for idx, row in corp_rating_rec_df.iterrows():
-                rating_date = datetime.strptime(row['Date'], '%m/%d/%Y')
+                rating_date = datetime.strptime(row[date_col], date_format)
                 query_start_date = rating_date - relativedelta(years=1)
                 if query_start_date <= sec_report_date <= rating_date:
                     # ignore unicode char
@@ -91,11 +79,38 @@ def init(l):
     lock = l
 
 
-if __name__ == '__main__':
+def main():
+    dataset_name = 'cr2'
+    if dataset_name == 'cr':
+        sec_dir_name = 'cr_sec_crawler_res'
+        ori_data_path = '../../data/cr_sec_ori/corporate_rating_with_cik.csv'
+        symbol_col = 'Symbol'
+        date_col = 'Date'
+        date_format = '%m/%d/%Y'
+    elif dataset_name == 'cr2':
+        sec_dir_name = 'cr2_sec_crawler_res'
+        ori_data_path = '../../data/cr2_sec_ori/corporateCreditRatingWithFinancialRatios.csv'
+        symbol_col = 'Ticker'
+        date_col = 'Rating Date'
+        date_format = '%Y-%m-%d'
+    else:
+        raise ValueError(f'invalid dataset name: {dataset_name}')
 
-    processes = 12
+    corp_rating_df = pd.read_csv(ori_data_path)
+    # we should assign Id as index to locate sec text with csv dataframe
+    if 'Id' not in corp_rating_df.columns:
+        corp_rating_df['Id'] = corp_rating_df.index
+    corp_rating_df.set_index('Id', inplace=True)
+    corp_rating_df['Item7A'] = ''
+    corp_rating_df['Item7'] = ''
+    corp_rating_df['Item2'] = ''
+    corp_rating_df['Item1A'] = ''
+    corp_rating_df['Item1'] = ''
+
+    processes = 20
     lock = Lock()
 
+    sec_res_txt = glob.glob(f'../../{sec_dir_name}/**/**/*.txt', recursive=True)  # => ['2.txt', 'sub/3.txt']
     txt_file_num = len(sec_res_txt)
     multi_thread_tasks = []
     process_pool = Pool(processes=processes, initializer=init, initargs=(lock,))
@@ -104,19 +119,24 @@ if __name__ == '__main__':
     pno = 0
 
     for t in range(0, txt_file_num, task_batch_size):
-        batch_tasks = sec_res_txt[t:t + task_batch_size]
+        batch_tasks_txt = sec_res_txt[t:t + task_batch_size]
         multi_thread_tasks.append(process_pool.apply_async(process_sec_text,
-                                                           (batch_tasks,),
+                                                           (batch_tasks_txt, corp_rating_df, symbol_col, date_col,
+                                                            date_format),
                                                            # callback=lambda x: pbar.update(task_batch_size),
                                                            ))
         pno += 1
 
     exec_res = [t.get() for t in multi_thread_tasks]
     res = list(itertools.chain(*exec_res))
-    process_pool.close()  # 关闭线程池清理
+    process_pool.close()
 
     for loc_item_txt in res:
         loc, item, txt = loc_item_txt
         corp_rating_df.at[loc, item] = txt
 
-    corp_rating_df.to_csv('../../data/cr_sec_ori/corporate_rating_with_cik_and_sec_text.csv')
+    corp_rating_df.to_csv(f'../../data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_sec_text.csv')
+
+
+if '__main__' == __name__:
+    main()

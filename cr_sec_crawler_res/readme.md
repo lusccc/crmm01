@@ -1,0 +1,1 @@
+resutls dir for `data_acquisition/2download_sec_text.py`

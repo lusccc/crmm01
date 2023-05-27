@@ -1,22 +1,26 @@
+import os
 from dataclasses import dataclass, field
-from typing import Optional, Union, List
+from typing import Optional, Union
 
 from transformers import TrainingArguments, IntervalStrategy
-
+os.environ["WANDB_DISABLED"] = "true"
 TASK = ['pretrain', 'fine_tune', 'fine_tune_from_scratch']
+MODALITY = ['num', 'cat', 'text']
 
 
 @dataclass
 class CrmmTrainingArguments(TrainingArguments):
-    # !!!!OURS!!!!
-    report_to: str = field(default='wandb')
+    # @@@@ 1. our args
+    # report_to: str = field(default='wandb')
     root_dir: str = field(default='./exps', metadata={"help": "parent dir of output_dir"})
+    pretrained_model_dir: str = field(default='exps/pretrain_2023-04-02_09-08-31_YFE/output', metadata={"help": ""})
+    auto_create_model_dir: bool = field(default=True, metadata={"help": "auto create model dir in root_dir"})
+    save_excel_path: str = field(default='./excel/binary_berttiny_sent10_kw20.xlsx', metadata={"help": ""})
     task: str = field(default="pretrain", metadata={"help": "", 'choices': TASK})
     use_modality: str = field(default="num,cat,text", metadata={"help": "used in multi dbn"})
-    pretrained_model_dir: str = field(default='exps/pretrain_2023-04-02_09-08-31_YFE/output', metadata={"help": ""})
     patience: int = field(default=1000, metadata={"help": ""})
 
-    # @@@@@@@@@@ BELOW ARE HUGGINGFACE ARGS
+    # @@@@ 2. huggingface args
     # output_dir and logging_dir will be auto set in runner_setup.setup
     output_dir: str = field(default=None, metadata={
         "help": "The output directory where the model predictions and checkpoints will be written."}, )
@@ -31,11 +35,9 @@ class CrmmTrainingArguments(TrainingArguments):
     remove_unused_columns: Optional[bool] = field(
         default=False, metadata={"help": "Remove columns not required by the model when using an nlp.Dataset."}
     )
-    # @@@@@@@@@@ num_train_epochs
     num_train_epochs: float = field(default=1, metadata={"help": "Total number of training epochs to perform."})
     logging_steps: int = field(default=10, metadata={"help": "Log every X updates steps."})
     no_cuda: bool = field(default=False, metadata={"help": "Do not use CUDA even when it is available"})
-    # @@@@@@@@@ per_device_train_batch_size, 7 for dbn train
     per_device_train_batch_size: int = field(default=1000, metadata={
         "help": "Batch size per GPU/TPU core/CPU for training."})
     evaluation_strategy: Union[IntervalStrategy, str] = field(default="epoch", metadata={
@@ -63,7 +65,7 @@ class CrmmTrainingArguments(TrainingArguments):
     # PyTorch 2.0 specifics
     # bf16: bool = field(default=True, metadata={})
     # torch_compile: bool = field(default=False, metadata={})
-    optim: str = field(default='adamw_torch_fused', metadata={})
+    # optim: str = field(default='adamw_torch_fused', metadata={})
 
     def __post_init__(self):
         super().__post_init__()
@@ -77,6 +79,9 @@ class CrmmTrainingArguments(TrainingArguments):
         else:
             self.metric_for_best_model = 'acc'
             self.greater_is_better = True
+
+        if self.output_dir is not None and self.logging_dir is not None:
+            self.auto_create_model_dir = False
 
 
 @dataclass

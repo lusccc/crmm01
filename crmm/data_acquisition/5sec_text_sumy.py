@@ -1,3 +1,4 @@
+import argparse
 import itertools
 from multiprocessing import Lock, Pool
 
@@ -18,8 +19,7 @@ from sumy.utils import get_stop_words
 # https://blog.csdn.net/Together_CZ/article/details/107628462
 
 LANGUAGE = "english"
-# SENTENCES_COUNT = 2
-SENTENCES_COUNT = 10
+
 
 """
 make sure you have aleady done below:
@@ -38,7 +38,7 @@ def extract_important_sent(txts, pno):
         summarizer = Summarizer(stemmer)
         summarizer.stop_words = get_stop_words(LANGUAGE)
         sum_sent = []
-        for sentence in summarizer(parser.document, SENTENCES_COUNT):
+        for sentence in summarizer(parser.document, sentences_num):
             sum_sent.append(str(sentence))
         summed = ''.join(sum_sent)
 
@@ -52,7 +52,15 @@ def init(l):
 
 
 if __name__ == '__main__':
-    data_df = pd.read_csv('../../data/cr_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv', index_col=0)
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--sentences_num', type=int, default=10)
+    parser.add_argument('--dataset_name', type=str, default='cr')
+    args = parser.parse_args()
+
+    sentences_num = args.sentences_num
+    dataset_name = args.dataset_name
+
+    data_df = pd.read_csv(f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_sec_merged_text.csv', index_col=0)
     # for index, row in data_df.iterrows():
     #     txt = row['secText']
 
@@ -83,4 +91,5 @@ if __name__ == '__main__':
         row_id, txt = ranked
         data_df.at[row_id, 'secText'] = txt
 
-    data_df.to_csv('../../data/cr_sec_ori/corporate_rating_with_cik_and_summarized_sec_text.csv')
+    data_df.to_csv(f'./data/{dataset_name}_sec_ori/'
+                   f'corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}.csv')

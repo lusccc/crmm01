@@ -27,6 +27,7 @@ from copy import copy
 companies_file_location = ''
 single_company = ''
 project_dir = path.dirname(path.dirname(__file__))
+# project_dir = './'
 parser = argparse.ArgumentParser()
 parser.add_argument('--storage', help='Specify path to storage location', default='sec_res')
 parser.add_argument('--write_sql', default=True, help='Save metadata to sqlite database? (Boolean)')
@@ -46,9 +47,11 @@ args = parser.parse_args()
 
 if args.storage:
     if not path.isabs(args.storage):
-        args.storage = path.join(project_dir, args.storage)
+        # args.storage = path.join(project_dir, args.storage)
+        pass
 else:
-    args.storage = path.join(project_dir, 'output_files_examples')
+    # args.storage = path.join(project_dir, 'output_files_examples')
+    args.storage = path.join('./', 'output_files_examples')
 
 args.write_sql = args.write_sql or True
 if args.company:

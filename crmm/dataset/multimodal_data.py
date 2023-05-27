@@ -69,8 +69,8 @@ class MultimodalData:
 
         # TODO manually construct FeatureMetadata
         # note 'RF': {} is just a placeholder, we don't actually use RF. but we want to transform feature after `fit`
-        # predictor = TabularPredictor(label=self.label_col).fit(self.raw_train_data, hyperparameters={'RF': {}})
-        predictor = TabularPredictor.load("AutogluonModels/ag-20230331_143023/")
+        predictor = TabularPredictor(label=self.label_col).fit(self.raw_train_data, hyperparameters={'RF': {}})
+        # predictor = TabularPredictor.load("AutogluonModels/ag-20230331_143023/")
         tfm_train_feats = predictor.transform_features(self.raw_train_data)
         tfm_test_feats = predictor.transform_features(self.raw_test_data)
         tfm_val_feats = predictor.transform_features(self.raw_val_data) if self.has_val else None

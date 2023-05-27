@@ -50,7 +50,7 @@ class Metadata(object):
         if index_url:
             index_metadata = {}
             attempts = 0
-            while attempts < 5:
+            while attempts < 1000:
                 try:
                     ri = requests_get(index_url)
                     logger.info('Status Code: ' + str(ri.status_code))
