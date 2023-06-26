@@ -39,23 +39,16 @@ def main(bert_model_args: BertModelArguments,
     training_args.seed = seed
     task = training_args.task
     # @@@@ 1. TABULAR COLUMNS
-    dataset_name = data_args.dataset_name
-    label_list = np.load(os.path.join(data_args.data_path, 'label_list.npy'), allow_pickle=True)
     # note: the num and cat cols will be automatically inferred in `data.crmm_data.MultimodalData`
-    column_info_dict = {
-        # 'text_cols': ['secText', 'secKeywords'],
-        'text_cols': ['secKeywords'],
-        # 'text_cols': ['secText'],
-        'label_col': 'Rating',
-        'label_list': label_list
-    }
-    data_args.column_info = column_info_dict
+    label_col = data_args.label_col  # 'Rating'
+    text_cols = data_args.text_cols.split(',')  # ['secText', 'secKeywords']
+    label_list = np.load(os.path.join(data_args.data_path, 'label_list.npy'), allow_pickle=True)
 
     # @@@@ 2. DATASET
     mm_data = MultimodalData(data_args,
-                             data_args.column_info['label_col'],
-                             data_args.column_info['label_list'],
-                             data_args.column_info['text_cols'],
+                             label_col=label_col,
+                             label_list=label_list,
+                             text_cols=text_cols,
                              num_transform_method=data_args.numerical_transformer_method)
     train_dataset, test_dataset, val_dataset = mm_data.get_datasets()
     n_labels = len(label_list)
@@ -66,20 +59,22 @@ def main(bert_model_args: BertModelArguments,
     nunique_cat_nums, cat_emb_dims = mm_data.get_nunique_cat_nums_and_emb_dim(equal_dim=None)
 
     # @@@@ 3. MODEL
-    bert_params = {'pretrained_model_name_or_path': bert_model_args.bert_model_name,
-                   'cache_dir': bert_model_args.cache_dir,
-                   'local_files_only': bert_model_args.load_hf_model_from_cache}
-    tokenizer = AutoTokenizer.from_pretrained(**bert_params)
+    bert_args = {'pretrained_model_name_or_path': bert_model_args.bert_model_name,
+                 'cache_dir': bert_model_args.cache_dir,
+                 'local_files_only': bert_model_args.load_hf_model_from_cache}
+    tokenizer = AutoTokenizer.from_pretrained(**bert_args)
     default_model_config_params = dict(n_labels=n_labels,
                                        num_feat_dim=test_dataset.numerical_feats.shape[1],
                                        nunique_cat_nums=nunique_cat_nums,
                                        cat_emb_dims=cat_emb_dims,
                                        use_modality=training_args.use_modality,
-                                       bert_params=bert_params,
+                                       modality_fusion_method=training_args.modality_fusion_method,
+                                       bert_args=bert_args,
                                        bert_model_name=bert_model_args.bert_model_name)
     if task == 'pretrain':
         model_config = MultiModalModelConfig(**default_model_config_params,
-                                             use_hf_pretrained_bert=False,
+                                             use_hf_pretrained_bert=bert_model_args.use_hf_pretrained_bert_in_pretrain,
+                                             freeze_bert_params=bert_model_args.freeze_bert_params,
                                              pretrained=False)
         model = MultiModalDBN(model_config)
     elif task == 'fine_tune':
@@ -90,6 +85,7 @@ def main(bert_model_args: BertModelArguments,
     elif task == 'fine_tune_from_scratch':
         model_config = MultiModalModelConfig(**default_model_config_params,
                                              use_hf_pretrained_bert=False,
+                                             freeze_bert_params=bert_model_args.freeze_bert_params,
                                              pretrained=True)  # manually set pretrained to True!
         # create model, where the bert model is loaded from hf model in models.rbm_factory.RBMFactory._get_bert
         model = MultiModalForClassification(model_config)
@@ -146,6 +142,7 @@ def main(bert_model_args: BertModelArguments,
 
         basic_info = {
             'dataset': data_args.dataset_name,
+            'dataset_info': data_args.dataset_info,
             'data_path': data_args.data_path,
             'bert_model': bert_model_args.bert_model_name,
             'numerical': 'num' in training_args.use_modality,
@@ -193,7 +190,7 @@ def save_excel(val_best_results, test_results, basic_info, excel_path):
 if __name__ == '__main__':
     parser = HfArgumentParser([BertModelArguments, MultimodalDataArguments, CrmmTrainingArguments])
     _bert_model_args, _data_args, _training_args = parser.parse_args_into_dataclasses()
-    _training_args = runner_setup.setup(_training_args)
+    _training_args = runner_setup.setup(_training_args, _data_args, _bert_model_args)
     logger.info(f'training_args: {_training_args}')
 
     main(_bert_model_args, _data_args, _training_args)

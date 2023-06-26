@@ -19,9 +19,11 @@ class MultiModalModelConfig(PretrainedConfig):
                  nunique_cat_nums=0,
                  cat_emb_dims=0,
                  use_modality=None,
-                 bert_params=None,
+                 modality_fusion_method=None,
+                 bert_args=None,
                  bert_model_name=None,
                  use_hf_pretrained_bert=False,
+                 freeze_bert_params=False,
                  pretrained=False,
                  **kwargs):
         super().__init__(**kwargs)
@@ -36,9 +38,11 @@ class MultiModalModelConfig(PretrainedConfig):
         # used in Embedding layer in models.emb_cat_feat.CatFeatureExtractor
         self.cat_emb_dims = cat_emb_dims
         self.use_modality = use_modality
-        self.bert_params = bert_params
+        self.modality_fusion_method = modality_fusion_method
+        self.bert_args = bert_args
         self.bert_model_name = bert_model_name
         self.use_hf_pretrained_bert = use_hf_pretrained_bert
+        self.freeze_bert_params = freeze_bert_params
         self.pretrained = pretrained
 
 

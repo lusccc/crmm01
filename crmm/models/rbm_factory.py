@@ -61,8 +61,9 @@ class RBMFactory:
             )
         elif modality == 'text':
             feature_extractor = TextFeatureExtractor(
-                bert_params=self.mm_model_config.bert_params,
+                bert_params=self.mm_model_config.bert_args,
                 load_hf_pretrained=self.mm_model_config.use_hf_pretrained_bert,
+                freeze_bert_params=self.mm_model_config.freeze_bert_params
             )
             rbm = GaussianGaussianRBM(
                 name='text',
@@ -80,7 +81,8 @@ class RBMFactory:
         feature_extractor = JointFeatureExtractor(
             modality_feat_dims=modality_feat_dims,
             hidden_dims=[512, 512],
-            dropout=dropout
+            dropout=dropout,
+            modality_fusion_method=self.mm_model_config.modality_fusion_method
         )
         joint_rbm = GaussianGaussianRBM(
             name='joint',

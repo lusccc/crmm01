@@ -1,5 +1,6 @@
 import argparse
 import itertools
+from math import isnan
 
 import pandas as pd
 import torch
@@ -12,7 +13,13 @@ def extract_sec_keywords(txts, keywords_num, pno):
     for row_id, row in txts.iterrows():
         print(f'pno:{pno}, row id: {row_id}')
         txt = row['secText']
-        keywords = kw_model.extract_keywords(txt, top_n=keywords_num)  # (word, score) tuples
+        if txt == 'nan' or (isinstance(txt, float) and isnan(txt)):
+            res.append([row_id, ''])
+            continue
+        try:
+            keywords = kw_model.extract_keywords(txt, top_n=int(keywords_num))  # (word, score) tuples
+        except:
+            print()
         keywords = ' '.join([w[0] for w in keywords])
         res.append([row_id, keywords])
     return res
@@ -21,8 +28,8 @@ def extract_sec_keywords(txts, keywords_num, pno):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--prev_step_sentences_num', type=int, default=10)
-    parser.add_argument('--keywords_num', type=int, default=20)
-    parser.add_argument('--dataset_name', type=str, default='cr')
+    parser.add_argument('--keywords_num', type=int, default=30)
+    parser.add_argument('--dataset_name', type=str, default='cr2')
     args = parser.parse_args()
 
     sentences_num = args.prev_step_sentences_num
@@ -30,7 +37,9 @@ if __name__ == '__main__':
     dataset_name = args.dataset_name
 
     torch.multiprocessing.set_start_method('spawn')
-    data_df = pd.read_csv(f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}.csv', index_col=0)
+    data_df = pd.read_csv(
+        f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}.csv',
+        index_col=0)
 
     processes = 3
     ctx = torch.multiprocessing.get_context("spawn")
@@ -60,6 +69,5 @@ if __name__ == '__main__':
         row_id, keywords = ranked
         data_df.at[row_id, 'secKeywords'] = keywords
 
-    data_df.to_csv(f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}_keywords{keywords_num}.csv')
-
-
+    data_df.to_csv(
+        f'./data/{dataset_name}_sec_ori/corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}_keywords{keywords_num}.csv')

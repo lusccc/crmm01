@@ -66,9 +66,12 @@ def calc_classification_metrics(p: EvalPrediction, save_cm_fig_dir=None):
         result = {
             "acc": acc,
             "f1": str(list(f1)),
+            "f1_mean": f1.mean(),
             "mcc": matthews_corrcoef(labels, pred_labels),
             "per_class_recall": str(recall.tolist()),
+            "recall_mean": recall.mean(),
             "per_class_precision": str(precision.tolist()),
+            "precision_mean": precision.mean(),
             "cm": str(cm.tolist())
         }
 

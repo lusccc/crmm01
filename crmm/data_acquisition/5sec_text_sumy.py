@@ -64,7 +64,7 @@ if __name__ == '__main__':
     # for index, row in data_df.iterrows():
     #     txt = row['secText']
 
-    processes = 10
+    processes = 6
     lock = Lock()
 
     num = len(data_df)

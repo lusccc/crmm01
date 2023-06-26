@@ -6,7 +6,6 @@ import pandas as pd
 
 
 def process_dataset(data_df, n_class, split_method, train_years, test_years, dataset_name):
-
     # @@@@  1. mapping labels
     if n_class:  # manually define class number
         if dataset_name == 'cr':
@@ -61,8 +60,9 @@ def process_dataset(data_df, n_class, split_method, train_years, test_years, dat
         train_df, val_df, test_df = np.split(data_df, [train_split_idx, val_split_idx])
 
     elif split_method == 'by_year':
-        data_df['Rating Date'] = pd.to_datetime(data_df['Rating Date'])
-        data_df['Rating Year'] = data_df['Rating Date'].dt.year.astype(int)
+        date_col = 'Rating Date' if 'Rating Date' in data_df.columns else 'Date'
+        data_df[date_col] = pd.to_datetime(data_df[date_col])
+        data_df['Rating Year'] = data_df[date_col].dt.year.astype(int)
         train_df = data_df[data_df['Rating Year'].isin(train_years)]
         train_df, val_df = np.split(train_df, [int(len(train_df) * .9)])
         test_df = data_df[data_df['Rating Year'].isin(test_years)]
@@ -93,23 +93,25 @@ if __name__ == '__main__':
     parser.add_argument('--prev_step_keywords_num', type=int, default=20)
     parser.add_argument('--n_class', type=int, default=2, help='number of classes')
     parser.add_argument('--split_method', type=str, default='mixed', help='split method')
-    parser.add_argument('--train_years', type=int, nargs='+', default=[], help='train years')
-    parser.add_argument('--test_years', type=int, nargs='+', default=[], help='test years')
+    parser.add_argument('--train_years', type=str, default='', help='train years')
+    parser.add_argument('--test_years', type=str, default='', help='test years')
     args = parser.parse_args()
+    print(args)
+
+    train_years = [int(year) for year in args.train_years.split(',')]
+    test_years = [int(year) for year in args.test_years.split(',')]
 
     dataset_name = args.dataset_name
     sentences_num = args.prev_step_sentences_num
     keywords_num = args.prev_step_keywords_num
     n_class = args.n_class
     split_method = args.split_method
-    train_years = args.train_years
-    test_years = args.test_years
-
+    print(f'./data/{dataset_name}_sec_ori/'
+          f'corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}_keywords{keywords_num}.csv')
     data_df = pd.read_csv(f'./data/{dataset_name}_sec_ori/'
                           f'corporate_rating_with_cik_and_summarized_sec_sent{sentences_num}_keywords{keywords_num}.csv',
                           index_col=0)
     process_dataset(data_df, n_class, split_method, train_years, test_years, dataset_name=dataset_name)
-
 
 # parameters set in data_acquisition/5sec_text_sumy.py and data_acquisition/6sec_keywords_extraction.py
 # sentence_num = 2

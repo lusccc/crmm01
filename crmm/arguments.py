@@ -18,6 +18,7 @@ class CrmmTrainingArguments(TrainingArguments):
     save_excel_path: str = field(default='./excel/binary_berttiny_sent10_kw20.xlsx', metadata={"help": ""})
     task: str = field(default="pretrain", metadata={"help": "", 'choices': TASK})
     use_modality: str = field(default="num,cat,text", metadata={"help": "used in multi dbn"})
+    modality_fusion_method: str = field(default="conv", metadata={"help": "used in multi dbn"})
     patience: int = field(default=1000, metadata={"help": ""})
 
     # @@@@ 2. huggingface args
@@ -89,6 +90,10 @@ class BertModelArguments:
     # prajjwal1/bert-tiny bert-base-uncased
     bert_model_name: str = field(default='prajjwal1/bert-tiny', metadata={
         "help": "Path to pretrained model or model identifier from huggingface.co/models"})
+    use_hf_pretrained_bert_in_pretrain: bool = field(default=True, metadata={
+        "help": "Whether to use huggingface pretrained bert in pretrain"})
+    freeze_bert_params: bool = field(default=True, metadata={
+        "help": ""})
     max_seq_length: int = field(default=512, metadata={
         "help": "The maximum length (in number of tokens) for the inputs to the transformer model"})
     config_name: Optional[str] = field(default=None, metadata={
@@ -101,12 +106,14 @@ class BertModelArguments:
 @dataclass
 class MultimodalDataArguments:
     dataset_name: str = field(default='cr_sec_6', metadata={"help": ""})
+    dataset_info: str = field(default='', metadata={"help": ""})
     data_path: str = field(default=f'./data/cr_sec_6', metadata={
         'help': 'the path to the csv file containing the dataset'})
     use_val: bool = field(default=True)
-    column_info: dict = field(default=None, metadata={
-        'help': 'a dict referencing the text, categorical, numerical, and label columns'
-                'its keys are text_cols, num_cols, cat_cols, and label_col'})
+    label_col: str = field(default='Rating', metadata={
+        'help': 'the name of the label column'})
+    text_cols: str = field(default='secKeywords', metadata={
+        'help': 'the name of the text column'})
     numerical_transformer_method: str = field(default='yeo_johnson', metadata={
         'help': 'sklearn numerical transformer to preprocess numerical data',
         'choices': ['yeo_johnson', 'box_cox', 'quantile_normal', 'standard', 'none']})

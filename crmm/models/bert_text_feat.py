@@ -5,10 +5,11 @@ from transformers import BertModel, PreTrainedModel, BertConfig
 
 
 class TextFeatureExtractor(nn.Module):
-    def __init__(self, bert_params, load_hf_pretrained=True):
+    def __init__(self, bert_params, load_hf_pretrained=True, freeze_bert_params=False):
         super(TextFeatureExtractor, self).__init__()
         self.bert_params = bert_params
         self.load_hf_pretrained = load_hf_pretrained
+        self.freeze_bert_params = freeze_bert_params
 
         self.pretrained_model_name_or_path = self.bert_params['pretrained_model_name_or_path']
 
@@ -20,6 +21,10 @@ class TextFeatureExtractor(nn.Module):
             # the bert part will load with our pretrained MultiModalDBN
             bert_config = BertConfig.from_pretrained(**self.bert_params)
             self.bert = BertModel(config=bert_config)
+
+        if self.freeze_bert_params:
+            # freeze bert params, only train the classifier layer
+            self.bert.requires_grad_(False)
 
 
     def forward(self, input_ids, attention_mask):
