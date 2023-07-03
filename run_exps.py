@@ -78,6 +78,7 @@ def run_single_exp(main_runner_args):
             "--logging_dir", logging_dir,
             "--save_excel_path", main_runner_args.excel_path
         ]
+        subprocess.run(cmd)
     else:
         task = "pretrain"
         pretrain_exp_dirs = create_exp_dirs(main_runner_args.root_dir, task)
@@ -103,7 +104,7 @@ def run_single_exp(main_runner_args):
             "--logging_dir", pretrain_logging_dir,
             "--save_excel_path", main_runner_args.excel_path
         ]
-
+        subprocess.run(pretrain_cmd)
         task = "fine_tune"
         fine_tune_exp_dirs = create_exp_dirs(main_runner_args.root_dir, task)
         if fine_tune_exp_dirs is None:
@@ -129,11 +130,8 @@ def run_single_exp(main_runner_args):
             "--pretrained_model_dir", pretrain_output_dir,
             "--save_excel_path", main_runner_args.excel_path
         ]
+        subprocess.run(cmd)
 
-    cmd_str = " ".join(cmd)
-    print()
-    print(f"Running command: {cmd_str}")
-    # subprocess.run(cmd)
 
 
 def generate_dataset(data_config):
@@ -307,6 +305,8 @@ def run_modality_exps(data_config, pre_epoch):
 
 def run_rolling_window_exps(data_config, pre_epoch):
     data_config['split_method'] = 'by_year'
+
+    # ------ EXPAND WHILE ROLLING FORWARD -------
     # train_years = [
     #     [2010, 2011, 2012],
     #     [2010, 2011, 2012, 2013],
@@ -331,6 +331,8 @@ def run_rolling_window_exps(data_config, pre_epoch):
     #     2015,
     #     2016
     # ]
+
+    # ----- FIXED WINDOW, MULTIPLE AHEAD
     train_years = [
         [2010, 2011, 2012],
         [2010, 2011, 2012],
@@ -373,7 +375,7 @@ def run_rolling_window_exps(data_config, pre_epoch):
                                    f"st{data_config['sent_num']}_kw{data_config['kw_num']}_" \
                                    f'{",".join(map(str, train_year))}_{test_year}'
 
-        extra_info = 'rolling_window_fixed_test_many_pre3'
+        extra_info = 'rolling_window_fixed_test_many_0627(findpre_all)'
         main_runner_args = MainRunnerArgs(
             root_dir="./exps",
             scratch='no',
@@ -396,7 +398,7 @@ def run_rolling_window_exps(data_config, pre_epoch):
         run_single_exp(main_runner_args)
 
 
-def run_benchmark(data_config, extra=None):
+def run_benchmark(data_config, extra='0701'):
     subprocess.run([
         "python", "crmm/benchmark_model_comparison.py",
         "--data_path", data_config["data_path"],
@@ -447,7 +449,7 @@ def run_benchmark_rolling_window(data_config):
                                    f"{data_config['split_method']}_" \
                                    f"st{data_config['sent_num']}_kw{data_config['kw_num']}_" \
                                    f'{",".join(map(str, train_year))}_{test_year}'
-        run_benchmark(data_config, extra=f'rolling_{train_years_str}_{test_years_str}')
+        run_benchmark(data_config, extra=f'rolling_{train_years_str}_{test_years_str}_0701')
 
 
 if __name__ == "__main__":
@@ -477,14 +479,14 @@ if __name__ == "__main__":
     # "cr2_cls2": "9",
     # "cr2_cls6": "4",
     pretrain_epochs = {
-        "cr_cls2": "3",
+        "cr_cls2": "2",
         "cr_cls6": "2",
-        "cr2_cls2": "3",
+        "cr2_cls2": "9",
         "cr2_cls6": "4",
     }
 
     # loop over all datasets
-    for dt in ['cr', 'cr2']:
+    for dt in ['cr', 'cr2',]:
         # for dt in ['cr2']:
         # for n_cls in ['2', '6']:
         for n_cls in ['2']:
@@ -493,15 +495,19 @@ if __name__ == "__main__":
             data_config["data_path"] = f"./data/{data_config['dataset_name']}_cls{data_config['n_class']}_" \
                                        f"{data_config['split_method']}_" \
                                        f"st{data_config['sent_num']}_kw{data_config['kw_num']}"
-            split_dataset(data_config)
-            print(data_config)
+            # split_dataset(data_config)
+            # print(data_config)
             # run_pre_epoch_exps(data_config)
             # run_modality_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_kw_or_txt_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
+
+            # for pre in [ 7, 8, 9, 10, 11, 12, 13, 14, 15]:
+            #     run_rolling_window_exps(data_config, str(pre))
+
             # run_rolling_window_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_conv_fusion_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
-            run_benchmark(data_config)
-            # run_benchmark_rolling_window(data_config)
+            # run_benchmark(data_config)
+            run_benchmark_rolling_window(data_config)
 
     # generate_dataset(data_config)
 

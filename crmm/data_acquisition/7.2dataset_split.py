@@ -60,6 +60,8 @@ def process_dataset(data_df, n_class, split_method, train_years, test_years, dat
         train_df, val_df, test_df = np.split(data_df, [train_split_idx, val_split_idx])
 
     elif split_method == 'by_year':
+        print('-'*60)
+        print(f'train_years: {train_years}, test_years: {test_years}')
         date_col = 'Rating Date' if 'Rating Date' in data_df.columns else 'Date'
         data_df[date_col] = pd.to_datetime(data_df[date_col])
         data_df['Rating Year'] = data_df[date_col].dt.year.astype(int)
@@ -69,8 +71,8 @@ def process_dataset(data_df, n_class, split_method, train_years, test_years, dat
     else:
         raise ValueError(f'Unknown split method: {split_method}')
 
-    print('Num examples train-val-test')
-    print(len(train_df), len(val_df), len(test_df))
+    print(f'train: {len(train_df)}, val: {len(val_df)}, test: {len(test_df)}')
+    print('-' * 60)
 
     # @@@@  3. save
     if split_method == 'mixed':

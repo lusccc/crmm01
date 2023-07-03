@@ -8,6 +8,7 @@ from autogluon.features.generators import LabelEncoderFeatureGenerator
 from autogluon.tabular import TabularDataset, TabularPredictor
 from autogluon.tabular.models import KNNModel
 from imblearn.metrics import geometric_mean_score
+from sklearn.ensemble import AdaBoostClassifier, GradientBoostingClassifier, BaggingClassifier
 from sklearn.metrics import confusion_matrix, accuracy_score, roc_auc_score, roc_curve
 from sklearn.preprocessing import StandardScaler
 
@@ -207,7 +208,104 @@ class CustomKNNModel(KNNModel):
         if time_limit is None or num_rows_max <= 10000:
             self.model = self._get_model_type()(**params).fit(X, y)
         else:
-            self.model = self._fit_with_samples(X=X, y=y, model_params=params, time_limit=time_limit - (time.time() - time_start))
+            self.model = self._fit_with_samples(X=X, y=y, model_params=params,
+                                                time_limit=time_limit - (time.time() - time_start))
+
+
+class CustomAdaBoostModel(CustomMLPModel):
+    def _fit(self, X: pd.DataFrame, y: pd.Series, **kwargs):
+        print('Entering the `_fit` method')
+
+        model_cls = AdaBoostClassifier
+
+        X = self.preprocess(X, is_train=True)
+        params = self._get_model_params()
+        print(f'Hyperparameters: {params}')
+        self.model = model_cls(**params)
+        self.model.fit(X, y)
+        print('Exiting the `_fit` method')
+
+    def _set_default_params(self):
+        default_params = {
+            'base_estimator': None,
+            'n_estimators': 50,
+            'learning_rate': 1.0,
+            'algorithm': 'SAMME.R',
+            'random_state': None,
+        }
+        for param, val in default_params.items():
+            self._set_default_param_value(param, val)
+
+
+class CustomGBDTModel(CustomMLPModel):
+    def _fit(self, X: pd.DataFrame, y: pd.Series, **kwargs):
+        print('Entering the `_fit` method')
+
+        model_cls = GradientBoostingClassifier
+
+        X = self.preprocess(X, is_train=True)
+        params = self._get_model_params()
+        print(f'Hyperparameters: {params}')
+        self.model = model_cls(**params)
+        self.model.fit(X, y)
+        print('Exiting the `_fit` method')
+
+    def _set_default_params(self):
+        default_params = {
+            'loss': 'deviance',
+            'learning_rate': 0.1,
+            'n_estimators': 100,
+            'subsample': 1.0,
+            'criterion': 'friedman_mse',
+            'min_samples_split': 2,
+            'min_samples_leaf': 1,
+            'min_weight_fraction_leaf': 0.0,
+            'max_depth': 3,
+            'min_impurity_decrease': 0.0,
+            'init': None,
+            'random_state': None,
+            'max_features': None,
+            'verbose': 0,
+            'max_leaf_nodes': None,
+            'warm_start': False,
+            'validation_fraction': 0.1,
+            'n_iter_no_change': None,
+            'tol': 1e-4,
+            'ccp_alpha': 0.0,
+        }
+        for param, val in default_params.items():
+            self._set_default_param_value(param, val)
+
+
+class CustomBaggingModel(CustomMLPModel):
+    def _fit(self, X: pd.DataFrame, y: pd.Series, **kwargs):
+        print('Entering the `_fit` method')
+
+        model_cls = BaggingClassifier
+
+        X = self.preprocess(X, is_train=True)
+        params = self._get_model_params()
+        print(f'Hyperparameters: {params}')
+        self.model = model_cls(**params)
+        self.model.fit(X, y)
+        print('Exiting the `_fit` method')
+
+    def _set_default_params(self):
+        default_params = {
+            'base_estimator': None,
+            'n_estimators': 10,
+            'max_samples': 1.0,
+            'max_features': 1.0,
+            'bootstrap': True,
+            'bootstrap_features': False,
+            'oob_score': False,
+            'warm_start': False,
+            'n_jobs': None,
+            'random_state': None,
+            'verbose': 0,
+        }
+        for param, val in default_params.items():
+            self._set_default_param_value(param, val)
 
 
 class Benchmark:
@@ -232,38 +330,43 @@ class Benchmark:
         y_true = self.test_data[label_column]
 
         # @@@@ 1. ag models
-        hyperparameters = {
-            'GBM': {},  # LightGBM
-            'CAT': {},  # CatBoost
-            'XGB': {},  # XGBoost
-            'RF': {},  # Random Forest
-            'XT': {},  # Extremely Randomized Trees
-            'KNN': {},  # K-Nearest Neighbors
-            'LR': {},  # Linear Regression
-            'NN_TORCH': {},  # Neural Network (PyTorch)
-            'FASTAI': {},  # Neural Network (FastAI)
-            # 'AG_AUTOMM': {},  # MultimodalPredictor (requires GPU)
-        }
-        ag_predictor = TabularPredictor(label=label_column, path=output_path).fit(train_data=self.train_data,
-                                                                                  tuning_data=self.val_data,
-                                                                                  hyperparameters=hyperparameters,
-                                                                                  num_cpus=24,
-                                                                                  save_space=True)
-        for model_name in ag_predictor.get_model_names():
-            y_pred_proba = ag_predictor.predict_proba(test_data, model=model_name).values[:, 1]
-            y_pred = ag_predictor.predict(test_data, model=model_name)
-            metrics = self.compute_metrics(y_true, y_pred, y_pred_proba)
-            model_performance[model_name] = metrics
+        # ag_hyperparameters = {
+        #     # 'GBM': {},  # LightGBM
+        #     # 'CAT': {},  # CatBoost
+        #     'XGB': {},  # XGBoost
+        #     'RF': {},  # Random Forest
+        #     'XT': {},  # Extremely Randomized Trees
+        #     # 'KNN': {},  # K-Nearest Neighbors
+        #     'LR': {},  # Linear Regression
+        #     # 'NN_TORCH': {},  # Neural Network (PyTorch)
+        #     # 'FASTAI': {},  # Neural Network (FastAI)
+        #     # 'AG_AUTOMM': {},  # MultimodalPredictor (requires GPU)
+        # }
+        # ag_predictor = TabularPredictor(label=label_column, path=output_path).fit(train_data=self.train_data,
+        #                                                                           tuning_data=self.val_data,
+        #                                                                           hyperparameters=ag_hyperparameters,
+        #                                                                           num_cpus=24,
+        #                                                                           save_space=True)
+        # for model_name in ag_predictor.get_model_names():
+        #     y_pred_proba = ag_predictor.predict_proba(test_data, model=model_name).values[:, 1]
+        #     y_pred = ag_predictor.predict(test_data, model=model_name)
+        #     metrics = self.compute_metrics(y_true, y_pred, y_pred_proba)
+        #     model_performance[model_name] = metrics
 
         # @@@@ 2. my custom models
+        custom_hyperparameters = {
+            # CustomSVMModel: {},
+            # CustomMLPModel: {},
+            # CustomKNNModel: {},
+            CustomGBDTModel: {},
+            CustomBaggingModel: {},
+            CustomAdaBoostModel: {}
+        }
         custom_predictor = TabularPredictor(label=label_column, path=output_path).fit(train_data=self.train_data,
                                                                                       tuning_data=self.val_data,
                                                                                       num_cpus=24,
                                                                                       save_space=True,
-                                                                                      hyperparameters={
-                                                                                          CustomSVMModel: {},
-                                                                                          CustomMLPModel: {},
-                                                                                          CustomKNNModel: {}})
+                                                                                      hyperparameters=custom_hyperparameters)
         for model_name in custom_predictor.get_model_names():
             y_pred_proba = custom_predictor.predict_proba(test_data, model=model_name).values[:, 1]
             y_pred = custom_predictor.predict(test_data, model=model_name)
@@ -290,8 +393,8 @@ class Benchmark:
         return {
             'Acc': acc,
             'AUC': auc,
-            'G-mean': g_mean,
             'KS': ks,
+            'G-mean': g_mean,
             'Type-I Acc': type1_acc,
             'Type-II Acc': type2_acc,
         }
@@ -299,8 +402,8 @@ class Benchmark:
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='')
-    parser.add_argument('--data_path', type=str, help='')
-    parser.add_argument('--excel_path', type=str)
+    parser.add_argument('--data_path', type=str, default='./data/cr2_cls2_mixed_st10_kw20')
+    parser.add_argument('--excel_path', type=str, default='./result.xlsx')
     args = parser.parse_args()
 
     benchmark = Benchmark(args.data_path, args.excel_path)

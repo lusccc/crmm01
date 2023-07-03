@@ -80,11 +80,11 @@ def init(l):
 
 
 # use_sec_section = ['Item7A', 'Item7', 'Item2', 'Item1A', 'Item1']
-use_sec_section = ['Item2']
+use_sec_section = ['Item2']  # TODO make comparison
 
 def main():
 
-    dataset_name = 'cr'
+    dataset_name = 'cr2'
     if dataset_name == 'cr':
         sec_dir_name = 'cr_sec_crawler_res'
         ori_data_path = './data/cr_sec_ori/corporate_rating_with_cik.csv'

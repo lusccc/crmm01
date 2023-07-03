@@ -4,26 +4,26 @@ import pandas as pd
 
 # 文件列表
 files = [
-    "benchmark_cr_cls2_rolling_2013,2014,2015_2016.xlsx",
-    "benchmark_cr_cls2_rolling_2012,2013,2014_2016.xlsx",
-    "benchmark_cr_cls2_rolling_2012,2013,2014_2015.xlsx",
-    "benchmark_cr_cls2_rolling_2011,2012,2013_2016.xlsx",
-    "benchmark_cr_cls2_rolling_2011,2012,2013_2015.xlsx",
-    "benchmark_cr_cls2_rolling_2011,2012,2013_2014.xlsx",
-    "benchmark_cr_cls2_rolling_2010,2011,2012_2016.xlsx",
-    "benchmark_cr_cls2_rolling_2010,2011,2012_2015.xlsx",
-    "benchmark_cr_cls2_rolling_2010,2011,2012_2014.xlsx",
-    "benchmark_cr_cls2_rolling_2010,2011,2012_2013.xlsx",
-    "benchmark_cr2_cls2_rolling_2013,2014,2015_2016.xlsx",
-    "benchmark_cr2_cls2_rolling_2012,2013,2014_2016.xlsx",
-    "benchmark_cr2_cls2_rolling_2012,2013,2014_2015.xlsx",
-    "benchmark_cr2_cls2_rolling_2011,2012,2013_2016.xlsx",
-    "benchmark_cr2_cls2_rolling_2011,2012,2013_2015.xlsx",
-    "benchmark_cr2_cls2_rolling_2011,2012,2013_2014.xlsx",
-    "benchmark_cr2_cls2_rolling_2010,2011,2012_2016.xlsx",
-    "benchmark_cr2_cls2_rolling_2010,2011,2012_2015.xlsx",
-    "benchmark_cr2_cls2_rolling_2010,2011,2012_2014.xlsx",
-    "benchmark_cr2_cls2_rolling_2010,2011,2012_2013.xlsx",
+    "benchmark_cr_cls2_rolling_2013,2014,2015_2016_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2012,2013,2014_2016_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2012,2013,2014_2015_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2011,2012,2013_2016_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2011,2012,2013_2015_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2011,2012,2013_2014_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2010,2011,2012_2016_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2010,2011,2012_2015_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2010,2011,2012_2014_0701.xlsx",
+    "benchmark_cr_cls2_rolling_2010,2011,2012_2013_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2013,2014,2015_2016_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2012,2013,2014_2016_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2012,2013,2014_2015_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2011,2012,2013_2016_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2011,2012,2013_2015_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2011,2012,2013_2014_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2010,2011,2012_2016_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2010,2011,2012_2015_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2010,2011,2012_2014_0701.xlsx",
+    "benchmark_cr2_cls2_rolling_2010,2011,2012_2013_0701.xlsx",
 ]
 
 
@@ -46,4 +46,4 @@ for file_name in files:
     merged_data = merged_data.append(empty_rows, ignore_index=True)
 
 # 将合并后的数据保存到一个新的Excel文件中
-merged_data.to_excel("./excel/merged_benchmark_rolling.xlsx", index=False, engine='openpyxl')
+merged_data.to_excel("./excel/merged_benchmark_rolling_0701.xlsx", index=False, engine='openpyxl')
