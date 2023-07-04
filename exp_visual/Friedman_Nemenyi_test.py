@@ -10,13 +10,20 @@ CD = Orange.evaluation.scoring.compute_CD(avranks, datasets_num, alpha='0.05', t
 Orange.evaluation.scoring.graph_ranks(avranks, names, cd=CD, width=8, textspace=1.5, reverse=True)
 plt.show()
 
+尽管Friedman检验和Nemenyi检验理论上可以应用于仅有两个数据集的情况，但在实践中，使用两个数据集可能会导致统计检验的可靠性和稳定性受到影响。实际上，当数据集数量有限时，检验的统计功效可能较低，这可能导致无法检测到实际存在的显著差异。
+
+对于这种情况，可以考虑使用其他统计检验。如果你只有两个数据集和两个模型，可以使用**Wilcoxon符号秩检验**来比较它们的性能。Wilcoxon符号秩检验是一种非参数检验，可用于比较两个相关样本的性能差异。对于两个数据集和多个模型的情况，可以为每对模型执行Wilcoxon符号秩检验，并使用**Bonferroni校正**来调整多重比较的显著性水平。
+
+总之，虽然在两个数据集上使用Friedman检验和Nemenyi检验是可能的，但这可能会降低统计检验的可靠性。在这种情况下，可以考虑使用其他检验方法，如Wilcoxon符号秩检验和Bonferroni校正。
 
 """
+import itertools
 
 import Orange
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
-from scipy.stats import friedmanchisquare
+from scipy.stats import friedmanchisquare, wilcoxon
 
 
 def parse_results(results):
@@ -144,6 +151,8 @@ all_results = [
     MEDBN	0.8391 	0.8991 	0.6904 	0.8288 	0.8738 	0.7964 
     """
 ]
+
+
 n_dataset = len(all_results)
 all_res_df = []
 for res in all_results:
@@ -199,3 +208,5 @@ if p_value < 0.05:
 
 else:
     print("在显著水平α=0.05下，无法拒绝原假设，认为所有算法性能相同")
+
+
