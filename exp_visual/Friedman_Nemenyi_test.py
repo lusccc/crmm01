@@ -1,49 +1,12 @@
-# https://blog.csdn.net/weixin_43306345/article/details/125010760
-"""
-import Orange  # version: Orange3==3.32.0
-import matplotlib.pyplot as plt
-
-names = ['alg1', 'alg2', 'alg3', 'alg4', 'alg5', 'alg6', 'alg7']
-avranks = [5.9, 4.37, 4.25, 5.39, 2.19, 2.85, 3.04]
-datasets_num = 135
-CD = Orange.evaluation.scoring.compute_CD(avranks, datasets_num, alpha='0.05', test='nemenyi')
-Orange.evaluation.scoring.graph_ranks(avranks, names, cd=CD, width=8, textspace=1.5, reverse=True)
-plt.show()
-
-尽管Friedman检验和Nemenyi检验理论上可以应用于仅有两个数据集的情况，但在实践中，使用两个数据集可能会导致统计检验的可靠性和稳定性受到影响。实际上，当数据集数量有限时，检验的统计功效可能较低，这可能导致无法检测到实际存在的显著差异。
-
-对于这种情况，可以考虑使用其他统计检验。如果你只有两个数据集和两个模型，可以使用**Wilcoxon符号秩检验**来比较它们的性能。Wilcoxon符号秩检验是一种非参数检验，可用于比较两个相关样本的性能差异。对于两个数据集和多个模型的情况，可以为每对模型执行Wilcoxon符号秩检验，并使用**Bonferroni校正**来调整多重比较的显著性水平。
-
-总之，虽然在两个数据集上使用Friedman检验和Nemenyi检验是可能的，但这可能会降低统计检验的可靠性。在这种情况下，可以考虑使用其他检验方法，如Wilcoxon符号秩检验和Bonferroni校正。
-
-"""
-import itertools
-
-import Orange
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
-from scipy.stats import friedmanchisquare, wilcoxon
 
+from exp_visual.nemenyi_plot_tool import nemenyi_plot_multiple
 
-def parse_results(results):
-    data_lines = results.strip().split("\n")
-    parsed_data = [line.split() for line in data_lines]
-    models = [line[0] for line in parsed_data]
-    acc = [float(line[1]) for line in parsed_data]
-    auc = [float(line[2]) for line in parsed_data]
-    ks = [float(line[3]) for line in parsed_data]
-    g_mean = [float(line[4]) for line in parsed_data]
-    return pd.DataFrame(
-        {
-            "Model": models,
-            "Acc": acc,
-            "AUC": auc,
-            "KS": ks,
-            "G-mean": g_mean,
-        }
-    )
-
+"""
+FOR ROLLING SPLIT DATASET EXP RESULTS
+两个数据集rolling的结果，每一个数据集rolling划分可得四个数据集，那么共有8个数据集。
+8个数据集的结果我都放在all_results里了
+"""
 
 all_results = [
     """
@@ -153,60 +116,50 @@ all_results = [
 ]
 
 
-n_dataset = len(all_results)
-all_res_df = []
-for res in all_results:
-    res_df = parse_results(res)
-    all_res_df.append(res_df)
-merged_res_df = pd.concat(all_res_df, axis=1, keys=[f'{i}' for i in range(n_dataset)])
-merged_res_df.columns = ['_'.join(col).strip() for col in merged_res_df.columns.values]
-metric = 'Acc'
-metric_res_all_mdl_dt = merged_res_df[['0_Model'] + [f'{i}_{metric}' for i in range(n_dataset)]]
-# 对每一列进行排名
-rank_df = metric_res_all_mdl_dt.iloc[:, 1:].rank(method='min', ascending=False)
-
-# 将排名结果替换原 dataframe 中的准确率结果
-metric_res_all_mdl_dt.iloc[:, 1:] = rank_df
-# 对每一行求平均值
-metric_res_all_mdl_dt['Avg_Rank'] = metric_res_all_mdl_dt.iloc[:, 1:].mean(axis=1)
-print(metric_res_all_mdl_dt.iloc[:, 1:].values.tolist())
-
-# Friedman检验
-chi2, p_value = friedmanchisquare(*metric_res_all_mdl_dt.iloc[:, 1:].values.tolist())
-print(f"Friedman检验结果: χ2 = {chi2:.2f}, p值={p_value:.4f}")
-
-if p_value < 0.05:
-    print("在显著水平α=0.05下，拒绝原假设，认为至少有一个算法性能不同")
-    # @@@@@ 1
-    # Nemenyi检验
-    # nemenyi_res = sp.posthoc_nemenyi_friedman(metric_res_all_mdl_dt.iloc[:, 1:].values.T)
-    # print("Nemenyi检验结果：")
-    CD = Orange.evaluation.scoring.compute_CD(metric_res_all_mdl_dt['Avg_Rank'], n_dataset, alpha='0.05',
-                                              test='nemenyi')
-    print(f'CD:  {CD}')
-    Orange.evaluation.scoring.graph_ranks(metric_res_all_mdl_dt['Avg_Rank'], metric_res_all_mdl_dt['0_Model'], cd=CD,
-                                          width=8, textspace=1.5, reverse=False)
-    plt.show()
-
-    # @@@@@ 2
-    # # 对数据进行排序
-    # df_sorted = metric_res_all_mdl_dt[['0_Model', 'Avg_Rank']].sort_values(by='Avg_Rank')
-    # # 获取算法名称和平均排名
-    # names = df_sorted['0_Model'].tolist()
-    # avg_ranks = df_sorted['Avg_Rank'].values
-    # # 绘制Nemenyi检验图
-    # rank_x = avg_ranks
-    # name_y = metric_res_all_mdl_dt['0_Model']
-    # CD = Orange.evaluation.scoring.compute_CD(metric_res_all_mdl_dt['Avg_Rank'], n_dataset, alpha='0.05',
-    #                                           test='nemenyi')
-    # min_ = [x for x in rank_x - CD / 2]
-    # max_ = [x for x in rank_x + CD / 2]
-    # # plt.title("nemenyi")
-    # plt.scatter(rank_x, name_y, )
-    # plt.hlines(name_y, min_, max_)
-    # plt.show()
-
-else:
-    print("在显著水平α=0.05下，无法拒绝原假设，认为所有算法性能相同")
+def parse_results(results):
+    data_lines = results.strip().split("\n")
+    parsed_data = [line.split() for line in data_lines]
+    models = [line[0] for line in parsed_data]
+    acc = [float(line[1]) for line in parsed_data]
+    auc = [float(line[2]) for line in parsed_data]
+    ks = [float(line[3]) for line in parsed_data]
+    g_mean = [float(line[4]) for line in parsed_data]
+    return pd.DataFrame(
+        {
+            "Model": models,
+            "Acc": acc,
+            "AUC": auc,
+            "KS": ks,
+            "G-mean": g_mean,
+        }
+    )
 
 
+def parse_df(all_results, metric, rank_data=False):
+    n_dataset = len(all_results)
+    all_res_df = []
+    for res in all_results:
+        res_df = parse_results(res)
+        all_res_df.append(res_df)
+    merged_res_df = pd.concat(all_res_df, axis=1, keys=[f'{i}' for i in range(n_dataset)])
+    merged_res_df.columns = ['_'.join(col).strip() for col in merged_res_df.columns.values]
+    metric_res_all_mdl_dt = merged_res_df[['0_Model'] + [f'{i}_{metric}' for i in range(n_dataset)]]
+    if rank_data:
+        # 对每一列进行排名
+        rank_df = metric_res_all_mdl_dt.iloc[:, 1:].rank(method='min', ascending=False)
+
+        # 将排名结果替换原 dataframe 中的准确率结果
+        metric_res_all_mdl_dt.iloc[:, 1:] = rank_df
+        # 对每一行求平均值
+        metric_res_all_mdl_dt['Avg_Rank'] = metric_res_all_mdl_dt.iloc[:, 1:].mean(axis=1)
+        print(metric_res_all_mdl_dt.iloc[:, 1:].values.tolist())
+    return metric_res_all_mdl_dt
+
+res_dicts = []
+metrics = ['Acc', 'AUC', 'KS', 'G-mean']
+for metric in metrics:
+    res_df = parse_df(all_results, metric)
+    res_dict = res_df.set_index('0_Model').T.to_dict('list')
+    res_dicts.append(res_dict)
+
+nemenyi_plot_multiple(res_dicts, [f"({chr(ord('e') + i)}) {m}" for i, m in enumerate(metrics)], row=4, col=1)

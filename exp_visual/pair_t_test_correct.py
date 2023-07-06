@@ -1,7 +1,12 @@
-import pandas as pd
-from scipy.stats import ttest_rel
-import seaborn as sns
 import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+from scipy.stats import ttest_rel
+
+"""
+FOR RANDOM SPLIT DATASET EXP RESULTS
+两个数据集：CCR-S和CCR-L的结果对应data1和data2
+"""
 
 # 输入数据集1和数据集2的结果
 data1 = {
@@ -28,6 +33,14 @@ df2.index = df2['Model']
 df1.drop(columns='Model', inplace=True)
 df2.drop(columns='Model', inplace=True)
 
+"""
+是的，计算 `diff_df = df2 - df1` 是合理的。这里，`df1` 和 `df2` 是两个包含相同模型性能指标的数据框，
+它们分别表示模型在数据集1和数据集2上的表现。通过对这两个数据框进行逐元素相减，我们可以得到一个新的数据框 `diff_df`，
+它表示每个模型在两个数据集上的性能指标的差异。
+
+在这个例子中，`diff_df` 的每一行都表示一个模型在两个数据集上的 Acc、AUC、KS 和 G-mean 等性能指标的差值。
+计算这些差值是为了接下来进行配对 t 检验，以检验两个数据集上的模型性能差异是否具有统计显著性。
+"""
 # 计算差值
 diff_df = df2 - df1
 
@@ -61,10 +74,34 @@ numeric_p_values = t_test_results.applymap(lambda x: float(x.rstrip('***')) if x
 for idx in numeric_p_values.index:
     numeric_p_values.at[idx, idx] = 1.0
 
-# 绘制热力图
+# 设置图形的尺寸和样式
 plt.figure(figsize=(10, 8))
-sns.heatmap(numeric_p_values, annot=True, cmap="YlGnBu_r", vmin=0, vmax=1, cbar_kws={'label': 'P-value'})
-plt.title("Paired T-test Results")
-plt.tight_layout()
-plt.savefig('paired_t_test_heatmap.png')
+sns.set(style="white")
+
+# 使用seaborn.heatmap()绘制热力图
+ax = sns.heatmap(
+    numeric_p_values,
+    annot=True,  # 在每个单元格中添加注释
+    cmap="GnBu",  # 选择颜色映射
+    vmin=0,  # 设置颜色条的最小值
+    vmax=0.1,  # 设置颜色条的最大值
+    linewidths=0.5,  # 设置单元格之间的间隔线宽度
+    cbar_kws={"shrink": 0.5},  # 设置颜色条尺寸
+    # mask=np.tril(np.ones_like(numeric_p_values, dtype=bool)) # 仅显示右上三角矩阵
+
+)
+
+# 设置图形的标题、坐标轴标签等
+# ax.set_title("Paired T-Test P-Values Heatmap ", )
+ax.set_xlabel("", )
+ax.set_ylabel("", )
+
+ax.tick_params(axis='both', which='major', labelsize=14)
+# 添加color bar描述
+cbar = ax.collections[0].colorbar
+cbar.set_label('Paired t-test p-value', rotation=270, labelpad=20)
+cbar.ax.yaxis.label.set_size(14)
+
+# 显示或保存图形
 plt.show()
+# plt.savefig("heatmap_filtered.png")

@@ -115,18 +115,18 @@ g_mean = [float(line[5]) for line in parsed_data]
 unique_models = sorted(list(set(models)))
 
 # 为每个指标分配数字编码
-metric_indices = {'ACC': 0, 'AUC': 1, 'KS': 2, 'G-mean': 3}
+metric_indices = {'Acc': 0, 'AUC': 1, 'KS': 2, 'G-mean': 3}
 
 # 创建一个字典，存储每个模型的数据
 data_dict = {}
 for model in unique_models:
-    data_dict[model] = {'ACC': [], 'AUC': [], 'KS': [], 'G-mean': []}
+    data_dict[model] = {'Acc': [], 'AUC': [], 'KS': [], 'G-mean': []}
 
 # 将数据添加到字典中
 for i in range(len(models)):
     model = models[i]
     year = years[i]
-    data_dict[model]['ACC'].append((year, acc[i]))
+    data_dict[model]['Acc'].append((year, acc[i]))
     data_dict[model]['AUC'].append((year, auc[i]))
     data_dict[model]['KS'].append((year, ks[i]))
     data_dict[model]['G-mean'].append((year, g_mean[i]))
@@ -147,32 +147,49 @@ model_styles = {
 
 # 设置绘图风格
 sns.set(style="whitegrid", )
-# custom_palette = sns.color_palette(["#9b59b6", "#3498db", "#95a5a6", "#e74c3c", "#34495e", "#2ecc71"])
-# sns.set_palette(custom_palette)
 
 # 创建一个画布和子图
-fig, ax = plt.subplots(2, 2, figsize=(8, 8), )
-metric_names = ['ACC', 'AUC', 'KS', 'G-mean']
+# fig, ax = plt.subplots(2, 2, figsize=(8, 8), )
+fig, ax = plt.subplots(4, 1, figsize=(5, 12), )
 
-# 为每个指标绘制折线图
-for model, data in data_dict.items():
-    line_style, marker, color = model_styles[model]
-    for metric_name, idx in metric_indices.items():
-        i, j = divmod(idx, 2)
-        x = [item[0] for item in data[metric_name]]
-        y = [item[1] for item in data[metric_name]]
-        ax[i, j].plot(
-            x, y, label=model, linestyle=line_style, marker=marker, markersize=7, color=color
-        )
-        ax[i, j].set_xlabel("Test year")
-        ax[i, j].set_ylabel(metric_name)
-        ax[i, j].set_xticks(years)
-        ax[i, j].xaxis.set_major_locator(ticker.MultipleLocator(1))
-        ax[i, j].xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
-        ax[i, j].set_title(f"({chr(ord('a') + idx)})", loc="center", y=-0.25, fontweight='bold')
+if len(ax.shape) == 1:
+    # 为每个指标绘制折线图
+    for model, data in data_dict.items():
+        line_style, marker, color = model_styles[model]
+        for metric_name, idx in metric_indices.items():
+            x = [item[0] for item in data[metric_name]]
+            y = [item[1] for item in data[metric_name]]
+            ax[idx].plot(
+                x, y, label=model, linestyle=line_style, marker=marker, markersize=7, color=color
+            )
+            ax[idx].set_xlabel("Test year", fontsize=12)
+            ax[idx].set_ylabel(metric_name, fontsize=12)
+            ax[idx].set_xticks(years)
+            ax[idx].xaxis.set_major_locator(ticker.MultipleLocator(1))
+            ax[idx].xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+            ax[idx].set_title(f"({chr(ord('a') + idx)})", loc="center", y=-0.4, fontweight='bold')
+        # 添加全局图例
+        handles, labels = ax[0].get_legend_handles_labels()
+elif  len(ax.shape) == 2:
+    # 为每个指标绘制折线图
+    for model, data in data_dict.items():
+        line_style, marker, color = model_styles[model]
+        for metric_name, idx in metric_indices.items():
+            i, j = divmod(idx, 2)
+            x = [item[0] for item in data[metric_name]]
+            y = [item[1] for item in data[metric_name]]
+            ax[i, j].plot(
+                x, y, label=model, linestyle=line_style, marker=marker, markersize=7, color=color
+            )
+            ax[i, j].set_xlabel("Test year", fontsize=12)
+            ax[i, j].set_ylabel(metric_name, fontsize=12)
+            ax[i, j].set_xticks(years)
+            ax[i, j].xaxis.set_major_locator(ticker.MultipleLocator(1))
+            ax[i, j].xaxis.set_major_formatter(ticker.FormatStrFormatter('%d'))
+            ax[i, j].set_title(f"({chr(ord('a') + idx)})", loc="center", y=-0.3, fontweight='bold')
 
-# 添加全局图例
-handles, labels = ax[0, 0].get_legend_handles_labels()
+    # 添加全局图例
+    handles, labels = ax[0, 0].get_legend_handles_labels()
 # 自定义标签顺序
 custom_labels_order = ['AdaBoost', 'Bagging', 'ET', 'GBDT', 'KNN', 'LogR', 'MLP', 'RF', 'SVM', 'XGBoost', 'MEDBN']
 # 根据自定义顺序重新组织 handles 和 labels
@@ -191,12 +208,11 @@ for label in custom_labels_order:
 fig.legend(
     ordered_handles,
     ordered_labels,
-    loc="center right",
-    bbox_to_anchor=(1., 0.5),
-    ncol=1,
+    loc="lower center",
+    # bbox_to_anchor=(1., 0.5),
+    ncol=6,
     fontsize="small",
 )
 
-# plt.xticks(years, weight='normal' )
 plt.tight_layout()
 plt.show()
