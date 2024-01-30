@@ -11,7 +11,7 @@ class GaussianGaussianRBM(nn.Module):
     \sum_{i,j}\dfrac{v_iW_{ij}h_j}{\sigma_i\tau_j}\quad\text{}$$
 
     input X,
-    X -> encoder -> v0 -> h0 -> decoder -> v1
+    X -> encoder -> v0 -> h0 -> v1
     loss is calculated between v0 and v1
     """
 

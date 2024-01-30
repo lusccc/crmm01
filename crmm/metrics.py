@@ -34,7 +34,7 @@ def calc_classification_metrics(p: EvalPrediction, save_cm_fig_dir=None):
         cm = confusion_matrix(labels, pred_labels)
         fpr, tpr, _ = roc_curve(labels, pred_scores)
         ks = np.max(tpr - fpr)
-        gmean = np.sqrt(recalls[ix] * precisions[ix])
+        # gmean = np.sqrt(recalls[ix] * precisions[ix]) # wrong
         tn, fp, fn, tp = cm.ravel()
         acc = (pred_labels == labels).mean()
 
@@ -42,6 +42,8 @@ def calc_classification_metrics(p: EvalPrediction, save_cm_fig_dir=None):
         type1_acc = tn / (tn + fp) if (tn + fp) > 0 else 0
         # type2 acc (TP / (TP + FN))
         type2_acc = tp / (tp + fn) if (tp + fn) > 0 else 0
+
+        gmean = np.sqrt(type1_acc * type2_acc)  # this is right!
 
         result = {"acc": acc,
                   'roc_auc': roc_auc_pred_score,

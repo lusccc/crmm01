@@ -222,6 +222,7 @@ def _plot_critical_difference(avg_data, cd, n_methods, alpha, ax, title):
     ax.yaxis.set_visible(False)
 
     ax.set_xticks(list(range(1, 12)))
+    ax.tick_params(axis='x', labelsize=12)
 
     ax.spines['top'].set_position(('data', height - axis_y))
     for p in ['right', 'bottom', 'left']:
@@ -258,7 +259,8 @@ def _plot_critical_difference(avg_data, cd, n_methods, alpha, ax, title):
         height - cd_y + 0.125,
         f'CD = ${cd:.2f}$',
         ha='center',
-        va='center'
+        va='center',
+        fontsize=12
     )
 
     # plot the critical intervals
