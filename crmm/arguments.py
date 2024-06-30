@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 from transformers import TrainingArguments, IntervalStrategy
 os.environ["WANDB_DISABLED"] = "true"
-TASK = ['pretrain', 'fine_tune', 'fine_tune_from_scratch']
+TASK = ['pretrain', 'fine_tune', 'fine_tune_from_scratch', 'explain_visual']
 MODALITY = ['num', 'cat', 'text']
 
 

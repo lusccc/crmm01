@@ -104,6 +104,7 @@ def run_single_exp(main_runner_args):
             "--logging_dir", pretrain_logging_dir,
             "--save_excel_path", main_runner_args.excel_path
         ]
+        print(" ".join(pretrain_cmd))
         subprocess.run(pretrain_cmd)
         task = "fine_tune"
         fine_tune_exp_dirs = create_exp_dirs(main_runner_args.root_dir, task)
@@ -130,6 +131,7 @@ def run_single_exp(main_runner_args):
             "--pretrained_model_dir", pretrain_output_dir,
             "--save_excel_path", main_runner_args.excel_path
         ]
+        print(" ".join(cmd))
         subprocess.run(cmd)
 
 
@@ -268,12 +270,14 @@ def run_modality_exps(data_config, pre_epoch):
     batch_size = "300"
     # batch_size = "100"
 
-    modalities = ["num", "cat", "text", "num,cat", "num,text", "cat,text", "num,cat,text"]
+    # modalities = ["num", "cat", "text", "num,cat", "num,text", "cat,text", "num,cat,text"]
     # modalities = ["text", "num,text", "cat,text", "num,cat,text"]
     # modalities = ["num", "cat", "text", "num,cat", "num,text", "cat,text",]
     # modalities = [ "text",  "num,text", "cat,text", "num,cat,text"]
     # modalities = ["num,cat,text"]
     # modalities = ["num,cat"]
+
+    modalities = ["text"]
 
     # extra_info = 'None'
     # extra_info = 'secItem2'
@@ -486,7 +490,8 @@ if __name__ == "__main__":
     }
 
     # loop over all datasets
-    for dt in ['cr', 'cr2',]:
+    # for dt in ['cr', 'cr2',]:
+    for dt in ['cr2']:
         # for dt in ['cr2']:
         # for n_cls in ['2', '6']:
         for n_cls in ['2']:
@@ -498,7 +503,7 @@ if __name__ == "__main__":
             # split_dataset(data_config)
             # print(data_config)
             # run_pre_epoch_exps(data_config)
-            # run_modality_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
+            run_modality_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_kw_or_txt_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
 
             # for pre in [ 7, 8, 9, 10, 11, 12, 13, 14, 15]:
@@ -507,7 +512,7 @@ if __name__ == "__main__":
             # run_rolling_window_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_conv_fusion_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_benchmark(data_config)
-            run_benchmark_rolling_window(data_config)
+            # run_benchmark_rolling_window(data_config)
 
     # generate_dataset(data_config)
 

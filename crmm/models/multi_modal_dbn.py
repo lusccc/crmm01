@@ -1,4 +1,5 @@
 import json
+from types import SimpleNamespace
 from typing import Optional, List
 from dataclasses import dataclass
 import torch
@@ -147,6 +148,36 @@ class MultiModalForClassification(MultiModalDBNPretrainedModel):
         # class_weights=torch.Tensor([3, 0.830040, 0.513447, 0.695364,
         #                1.166667, 4.565217]).cuda())
         return loss, logits, classifier_layer_outputs
+
+    def _init_weights(self, module):
+        pass
+
+
+class ModelForExplain(MultiModalDBNPretrainedModel):
+
+    def __init__(self, config):
+        super().__init__(config)
+        self.config = config
+        self.mmdbn = MultiModalDBN(self.config)
+        self.n_labels = self.config.n_labels
+
+        self.classifier = get_classifier(input_dim=self.mmdbn.rbm_factory.get_rbm_output_dim_for_classification(),
+                                         n_class=self.n_labels)
+
+    def forward(self, input_ids, attention_mask=None, **kwargs):
+        labels = None
+        cat = torch.zeros(0)
+        num = torch.zeros(0)
+        classification_features = self.mmdbn(labels=labels, cat=cat, num=num,
+                                             text={'input_ids': input_ids, 'attention_mask': attention_mask, })
+        loss, logits, classifier_layer_outputs = hf_loss_func(classification_features,
+                                                              self.classifier,
+                                                              labels,
+                                                              self.n_labels,
+                                                              None)
+        # return {'logits': logits}
+        # return logits
+        return SimpleNamespace(logits=logits)
 
     def _init_weights(self, module):
         pass

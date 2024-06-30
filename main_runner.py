@@ -9,7 +9,7 @@ import pandas as pd
 import torch
 import torchinfo
 from torch.utils.data import ConcatDataset
-from transformers import AutoTokenizer, Trainer, EarlyStoppingCallback, HfArgumentParser
+from transformers import AutoTokenizer, Trainer, EarlyStoppingCallback, HfArgumentParser, BertTokenizer
 from transformers.utils import logging
 
 from crmm import runner_setup
@@ -17,7 +17,8 @@ from crmm.arguments import BertModelArguments, MultimodalDataArguments, CrmmTrai
 from crmm.dataset.multimodal_data import MultimodalData
 from crmm.dataset.multimodal_dataset import MultimodalDatasetCollator
 from crmm.metrics import calc_classification_metrics
-from crmm.models.multi_modal_dbn import MultiModalModelConfig, MultiModalDBN, MultiModalForClassification
+from crmm.models.multi_modal_dbn import MultiModalModelConfig, MultiModalDBN, MultiModalForClassification, ModelForExplain
+from explain_visual import lime_visual
 
 logger = logging.get_logger('transformers')
 
@@ -89,10 +90,25 @@ def main(bert_model_args: BertModelArguments,
                                              pretrained=True)  # manually set pretrained to True!
         # create model, where the bert model is loaded from hf model in models.rbm_factory.RBMFactory._get_bert
         model = MultiModalForClassification(model_config)
+    elif task == 'explain_visual':
+        model_config = MultiModalModelConfig.from_pretrained(training_args.pretrained_model_dir)
+        model_config.use_hf_pretrained_bert = False
+        model = ModelForExplain.from_pretrained(training_args.pretrained_model_dir, config=model_config)
     else:
         raise ValueError(f'Unknown task: {task}')
     logger.info(f'\n{model}')
     logger.info(f'\n{torchinfo.summary(model, verbose=0)}')
+
+    ####### SHAP VISUAL #######
+    """
+    python main_runner.py --task shap_visual --bert_model_name prajjwal1/bert-tiny --use_hf_pretrained_bert_in_pretrain true --freeze_bert_params false --use_modality text --modality_fusion_method conv --text_cols secKeywords --per_device_train_batch_size 300 --num_train_epochs 200 --patience 1000 --dataset_name cr --dataset_info  --data_path ./data/cr_cls2_mixed_st10_kw20 --output_dir ./exps/fine_tune_2024-06-13_19-37-43_UMY/output --logging_dir ./exps/fine_tune_2024-06-13_19-37-43_UMY/logging --pretrained_model_dir ./exps/pretrain_2024-06-13_19-37-43_Mr3/output --save_excel_path ./excel/cr_cls2_modality_txtcol(secKeywords)_(0621_aft_pre10).xlsx
+    """
+    if task == 'explain_visual':
+        model.to(training_args.device)
+        model.eval()
+        # shap_visual(model, tokenizer, test_dataset)
+        lime_visual(model, tokenizer, test_dataset)
+        return
 
     # @@@@ 4. TRAINING
     get_trainer = lambda model: Trainer(

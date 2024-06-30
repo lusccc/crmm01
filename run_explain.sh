@@ -1,0 +1,4 @@
+python main_runner.py --task explain_visual --bert_model_name prajjwal1/bert-tiny --use_hf_pretrained_bert_in_pretrain true --freeze_bert_params false --use_modality text --modality_fusion_method conv --text_cols secKeywords --per_device_train_batch_size 300 --num_train_epochs 200 --patience 1000 --dataset_name cr --dataset_info "" --data_path ./data/cr_cls2_mixed_st10_kw20  --pretrained_model_dir exps/cr_finetune/output
+
+
+python main_runner.py --task explain_visual --bert_model_name prajjwal1/bert-tiny --use_hf_pretrained_bert_in_pretrain true --freeze_bert_params false --use_modality text --modality_fusion_method conv --text_cols secKeywords --per_device_train_batch_size 300 --num_train_epochs 200 --patience 1000 --dataset_name cr2 --dataset_info "" --data_path ./data/cr2_cls2_mixed_st10_kw20  --pretrained_model_dir exps/cr2_finetune/output
