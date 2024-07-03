@@ -35,7 +35,7 @@ class RBMFactory:
         if modality == 'num':
             feature_extractor = NumFeatureExtractor(
                 input_dim=self.mm_model_config.num_feat_dim,
-                hidden_dims=[512, 512, 512],  # hidden size in res block
+                hidden_dims=[512, 512] if self.mm_model_config.small_params else [512, 512, 512],
                 dropout=dropout
             )
             rbm = GaussianGaussianRBM(
@@ -50,7 +50,8 @@ class RBMFactory:
                 num_embeddings=self.mm_model_config.nunique_cat_nums,
                 embedding_dims=self.mm_model_config.cat_emb_dims,
                 hidden_dim=max(self.mm_model_config.cat_emb_dims),
-                dropout=dropout
+                dropout=dropout,
+                small_params=self.mm_model_config.small_params
             )
             rbm = GaussianGaussianRBM(
                 name='cat',

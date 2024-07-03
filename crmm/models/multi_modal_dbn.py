@@ -26,6 +26,7 @@ class MultiModalModelConfig(PretrainedConfig):
                  use_hf_pretrained_bert=False,
                  freeze_bert_params=False,
                  pretrained=False,
+                 small_params=False,
                  **kwargs):
         super().__init__(**kwargs)
 
@@ -45,6 +46,7 @@ class MultiModalModelConfig(PretrainedConfig):
         self.use_hf_pretrained_bert = use_hf_pretrained_bert
         self.freeze_bert_params = freeze_bert_params
         self.pretrained = pretrained
+        self.small_params = small_params
 
 
 class MultiModalDBNPretrainedModel(PreTrainedModel):

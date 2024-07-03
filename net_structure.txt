@@ -1,0 +1,195 @@
+MultiModalDBN(
+  (rbms): ModuleDict(
+    (num): GaussianGaussianRBM(
+      (encoder): NumFeatureExtractor(
+        (input_layer): Linear(in_features=17, out_features=512, bias=True)
+        (residual_blocks): ModuleList(
+          (0): ResidualBlock(
+            (fc1): Linear(in_features=512, out_features=512, bias=True)
+            (bn1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu1): ReLU()
+            (dropout1): Dropout(p=0.1, inplace=False)
+            (fc2): Linear(in_features=512, out_features=512, bias=True)
+            (bn2): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu2): ReLU()
+            (dropout2): Dropout(p=0.1, inplace=False)
+          )
+          (1): ResidualBlock(
+            (fc1): Linear(in_features=512, out_features=512, bias=True)
+            (bn1): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu1): ReLU()
+            (dropout1): Dropout(p=0.1, inplace=False)
+            (fc2): Linear(in_features=512, out_features=512, bias=True)
+            (bn2): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+            (relu2): ReLU()
+            (dropout2): Dropout(p=0.1, inplace=False)
+          )
+        )
+      )
+      (visible_input_bn): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (cat): GaussianGaussianRBM(
+      (encoder): CatFeatureExtractor(
+        (embedding_layers): ModuleList(
+          (0): Embedding(7, 8)
+          (1): Embedding(871, 32)
+          (2): Embedding(13, 8)
+          (3): Embedding(485, 32)
+        )
+        (fcs): ModuleList(
+          (0): Linear(in_features=8, out_features=32, bias=True)
+          (1): Linear(in_features=32, out_features=32, bias=True)
+          (2): Linear(in_features=8, out_features=32, bias=True)
+          (3): Linear(in_features=32, out_features=32, bias=True)
+        )
+        (res_block1): ConvResidualBlock(
+          (conv1): Conv1d(4, 32, kernel_size=(3,), stride=(1,), padding=(1,))
+          (bn1): BatchNorm1d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (dropout1): Dropout(p=0.1, inplace=False)
+          (conv2): Conv1d(32, 32, kernel_size=(3,), stride=(1,), padding=(1,))
+          (bn2): BatchNorm1d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          (dropout2): Dropout(p=0.1, inplace=False)
+          (shortcut): Sequential(
+            (0): Conv1d(4, 32, kernel_size=(1,), stride=(1,))
+            (1): BatchNorm1d(32, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+          )
+        )
+        (pool1): MaxPool1d(kernel_size=2, stride=2, padding=0, dilation=1, ceil_mode=False)
+      )
+      (visible_input_bn): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (text): GaussianGaussianRBM(
+      (encoder): TextFeatureExtractor(
+        (bert): BertModel(
+          (embeddings): BertEmbeddings(
+            (word_embeddings): Embedding(30522, 128, padding_idx=0)
+            (position_embeddings): Embedding(512, 128)
+            (token_type_embeddings): Embedding(2, 128)
+            (LayerNorm): LayerNorm((128,), eps=1e-12, elementwise_affine=True)
+            (dropout): Dropout(p=0.1, inplace=False)
+          )
+          (encoder): BertEncoder(
+            (layer): ModuleList(
+              (0): BertLayer(
+                (attention): BertAttention(
+                  (self): BertSelfAttention(
+                    (query): Linear(in_features=128, out_features=128, bias=True)
+                    (key): Linear(in_features=128, out_features=128, bias=True)
+                    (value): Linear(in_features=128, out_features=128, bias=True)
+                    (dropout): Dropout(p=0.1, inplace=False)
+                  )
+                  (output): BertSelfOutput(
+                    (dense): Linear(in_features=128, out_features=128, bias=True)
+                    (LayerNorm): LayerNorm((128,), eps=1e-12, elementwise_affine=True)
+                    (dropout): Dropout(p=0.1, inplace=False)
+                  )
+                )
+                (intermediate): BertIntermediate(
+                  (dense): Linear(in_features=128, out_features=512, bias=True)
+                  (intermediate_act_fn): GELUActivation()
+                )
+                (output): BertOutput(
+                  (dense): Linear(in_features=512, out_features=128, bias=True)
+                  (LayerNorm): LayerNorm((128,), eps=1e-12, elementwise_affine=True)
+                  (dropout): Dropout(p=0.1, inplace=False)
+                )
+              )
+              (1): BertLayer(
+                (attention): BertAttention(
+                  (self): BertSelfAttention(
+                    (query): Linear(in_features=128, out_features=128, bias=True)
+                    (key): Linear(in_features=128, out_features=128, bias=True)
+                    (value): Linear(in_features=128, out_features=128, bias=True)
+                    (dropout): Dropout(p=0.1, inplace=False)
+                  )
+                  (output): BertSelfOutput(
+                    (dense): Linear(in_features=128, out_features=128, bias=True)
+                    (LayerNorm): LayerNorm((128,), eps=1e-12, elementwise_affine=True)
+                    (dropout): Dropout(p=0.1, inplace=False)
+                  )
+                )
+                (intermediate): BertIntermediate(
+                  (dense): Linear(in_features=128, out_features=512, bias=True)
+                  (intermediate_act_fn): GELUActivation()
+                )
+                (output): BertOutput(
+                  (dense): Linear(in_features=512, out_features=128, bias=True)
+                  (LayerNorm): LayerNorm((128,), eps=1e-12, elementwise_affine=True)
+                  (dropout): Dropout(p=0.1, inplace=False)
+                )
+              )
+            )
+          )
+          (pooler): BertPooler(
+            (dense): Linear(in_features=128, out_features=128, bias=True)
+            (activation): Tanh()
+          )
+        )
+      )
+      (visible_input_bn): BatchNorm1d(128, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+    (joint): GaussianGaussianRBM(
+      (encoder): JointFeatureExtractor(
+        (fcs): ModuleDict(
+          (num): Sequential(
+            (0): Linear(in_features=512, out_features=512, bias=True)
+            (1): ReLU(inplace=True)
+            (2): Dropout(p=0.1, inplace=False)
+            (3): Linear(in_features=512, out_features=512, bias=True)
+            (4): ReLU(inplace=True)
+            (5): Dropout(p=0.1, inplace=False)
+          )
+          (cat): Sequential(
+            (0): Linear(in_features=512, out_features=512, bias=True)
+            (1): ReLU(inplace=True)
+            (2): Dropout(p=0.1, inplace=False)
+            (3): Linear(in_features=512, out_features=512, bias=True)
+            (4): ReLU(inplace=True)
+            (5): Dropout(p=0.1, inplace=False)
+          )
+          (text): Sequential(
+            (0): Linear(in_features=128, out_features=512, bias=True)
+            (1): ReLU(inplace=True)
+            (2): Dropout(p=0.1, inplace=False)
+            (3): Linear(in_features=512, out_features=512, bias=True)
+            (4): ReLU(inplace=True)
+            (5): Dropout(p=0.1, inplace=False)
+          )
+        )
+        (ws): ParameterDict(
+            (num): Parameter containing: [torch.FloatTensor of size 1]
+            (cat): Parameter containing: [torch.FloatTensor of size 1]
+            (text): Parameter containing: [torch.FloatTensor of size 1]
+        )
+        (flatten): Flatten(start_dim=1, end_dim=-1)
+        (attention): MultiheadAttention(
+          (out_proj): NonDynamicallyQuantizableLinear(in_features=512, out_features=512, bias=True)
+        )
+      )
+      (visible_input_bn): BatchNorm1d(512, eps=1e-05, momentum=0.1, affine=True, track_running_stats=True)
+    )
+  )
+)
+2024-06-30 16:05:08 [I] (main_runner.py:100):
+===============================================================================================
+Layer (type:depth-idx)                                                 Param #
+===============================================================================================
+MultiModalDBN                                                          --
+├─ModuleDict: 1-1                                                      --
+│    └─GaussianGaussianRBM: 2-1                                        264,192
+│    │    └─NumFeatureExtractor: 3-1                                   1,063,936
+│    │    └─BatchNorm1d: 3-2                                           1,024
+│    └─GaussianGaussianRBM: 2-2                                        264,192
+│    │    └─CatFeatureExtractor: 3-3                                   50,112
+│    │    └─BatchNorm1d: 3-4                                           1,024
+│    └─GaussianGaussianRBM: 2-3                                        16,896
+│    │    └─TextFeatureExtractor: 3-5                                  (4,385,920)
+│    │    └─BatchNorm1d: 3-6                                           256
+│    └─GaussianGaussianRBM: 2-4                                        264,192
+│    │    └─JointFeatureExtractor: 3-7                                 2,429,955
+│    │    └─BatchNorm1d: 3-8                                           1,024
+===============================================================================================
+Total params: 8,742,723
+Trainable params: 4,356,803
+Non-trainable params: 4,385,920
+===============================================================================================

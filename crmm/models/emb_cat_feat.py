@@ -92,12 +92,37 @@ class ConvResidualBlock(nn.Module):
         return out
 
 
+# TODO for small param exp
+class ConvResidualBlockSmall(nn.Module):
+    def __init__(self, in_channels, out_channels, kernel_size=3, stride=1, padding=1, dropout=0.5):
+        super(ConvResidualBlockSmall, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels, out_channels, kernel_size, stride, padding)
+        self.bn1 = nn.BatchNorm1d(out_channels)
+        self.dropout1 = nn.Dropout(dropout)
+
+        if in_channels == out_channels:
+            self.shortcut = nn.Identity()
+        else:
+            self.shortcut = nn.Sequential(
+                nn.Conv1d(in_channels, out_channels, kernel_size=1, stride=1, padding=0),
+                nn.BatchNorm1d(out_channels)
+            )
+
+    def forward(self, x):
+        out = F.relu(self.bn1(self.conv1(x)))
+        out = self.dropout1(out)
+        out += self.shortcut(x)
+        out = F.relu(out)
+        return out
+
+
 class CatFeatureExtractor(nn.Module):
-    def __init__(self, num_embeddings, embedding_dims, hidden_dim, dropout):
+    def __init__(self, num_embeddings, embedding_dims, hidden_dim, dropout, small_params=False):
         super(CatFeatureExtractor, self).__init__()
         self.num_embeddings = num_embeddings
         self.embedding_dims = embedding_dims
         self.hidden_dim = hidden_dim
+        self.small_params = small_params
 
         self.embedding_layers = nn.ModuleList()
         self.fcs = nn.ModuleList()
@@ -106,7 +131,8 @@ class CatFeatureExtractor(nn.Module):
             self.embedding_layers.append(nn.Embedding(n_emb + 1, emb_dim))
             self.fcs.append(nn.Linear(emb_dim, hidden_dim))
 
-        self.res_block1 = ConvResidualBlock(len(self.num_embeddings), 32, dropout=dropout)
+        self.res_block1 = ConvResidualBlockSmall(len(self.num_embeddings), 40, dropout=dropout) if small_params \
+            else ConvResidualBlock(len(self.num_embeddings), 32, dropout=dropout)
         # self.res_block2 = ConvResidualBlock(32, 64)
         self.pool1 = nn.MaxPool1d(kernel_size=2, stride=2, padding=0)
 
@@ -128,4 +154,4 @@ class CatFeatureExtractor(nn.Module):
         return out
 
     def get_output_dim(self):
-        return 32 * self.hidden_dim // 2
+        return 40 * self.hidden_dim // 2 if self.small_params else 32 * self.hidden_dim // 2

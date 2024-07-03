@@ -48,6 +48,9 @@ class JointFeatureExtractor(nn.Module):
             self.pool = nn.MaxPool1d(kernel_size=2, stride=2, padding=0)
         self.flatten = nn.Flatten()
 
+        if self.modality_fusion_method == 'attention':
+            self.attention = nn.MultiheadAttention(embed_dim=self.hidden_dims[-1], num_heads=1)
+
     def forward(self, x):
         if self.modality_fusion_method == 'conv':
             x_aligned = []  # aligned features to hidden_dim
@@ -88,7 +91,24 @@ class JointFeatureExtractor(nn.Module):
                 x = x * weights
                 x_concat.append(x)
             output = torch.cat(x_concat, dim=1)
+        elif self.modality_fusion_method == 'attention':
+            x_aligned = []
+            for modality, x in x.items():
+                # Apply linear transformation
+                x = self.fcs[modality](x)
+                # Apply sigmoid to weights
+                weights = torch.sigmoid(self.ws[modality])
+                x = x * weights
+                x_aligned.append(x.unsqueeze(0))  # Add sequence dimension for attention (1, B, L)
+            # Stack modality features along the sequence dimension
+            x_stacked = torch.cat(x_aligned, dim=0)  # (num_modalities, B, L)
 
+            # Apply attention mechanism for feature fusion
+            x_fused, _ = self.attention(x_stacked, x_stacked, x_stacked)
+
+            # Average over modalities
+            x_fused = torch.mean(x_fused, dim=0)  # (B, L)
+            output = self.flatten(x_fused)
         return output
 
     def get_output_dim(self):
@@ -96,6 +116,8 @@ class JointFeatureExtractor(nn.Module):
             return self.hidden_dims[-1] * self.num_modalities
         elif self.modality_fusion_method == 'conv':
             return 1 * self.hidden_dims[-1] // 2
+        elif self.modality_fusion_method == 'attention':
+            return self.hidden_dims[-1]
 
 
 if __name__ == '__main__':

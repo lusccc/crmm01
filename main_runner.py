@@ -19,6 +19,7 @@ from crmm.dataset.multimodal_dataset import MultimodalDatasetCollator
 from crmm.metrics import calc_classification_metrics
 from crmm.models.multi_modal_dbn import MultiModalModelConfig, MultiModalDBN, MultiModalForClassification, ModelForExplain
 from explain_visual import lime_visual
+from runner_callback import TimeCallback
 
 logger = logging.get_logger('transformers')
 
@@ -71,7 +72,8 @@ def main(bert_model_args: BertModelArguments,
                                        use_modality=training_args.use_modality,
                                        modality_fusion_method=training_args.modality_fusion_method,
                                        bert_args=bert_args,
-                                       bert_model_name=bert_model_args.bert_model_name)
+                                       bert_model_name=bert_model_args.bert_model_name,
+                                       small_params=training_args.small_params)
     if task == 'pretrain':
         model_config = MultiModalModelConfig(**default_model_config_params,
                                              use_hf_pretrained_bert=bert_model_args.use_hf_pretrained_bert_in_pretrain,
@@ -97,12 +99,10 @@ def main(bert_model_args: BertModelArguments,
     else:
         raise ValueError(f'Unknown task: {task}')
     logger.info(f'\n{model}')
-    logger.info(f'\n{torchinfo.summary(model, verbose=0)}')
+    # logger.info(f'\n{torchinfo.summary(model, verbose=0)}')
+    total_params = sum(p.numel() for p in model.parameters())
+    logger.info(f"Total number of parameters: {total_params}")
 
-    ####### SHAP VISUAL #######
-    """
-    python main_runner.py --task shap_visual --bert_model_name prajjwal1/bert-tiny --use_hf_pretrained_bert_in_pretrain true --freeze_bert_params false --use_modality text --modality_fusion_method conv --text_cols secKeywords --per_device_train_batch_size 300 --num_train_epochs 200 --patience 1000 --dataset_name cr --dataset_info  --data_path ./data/cr_cls2_mixed_st10_kw20 --output_dir ./exps/fine_tune_2024-06-13_19-37-43_UMY/output --logging_dir ./exps/fine_tune_2024-06-13_19-37-43_UMY/logging --pretrained_model_dir ./exps/pretrain_2024-06-13_19-37-43_Mr3/output --save_excel_path ./excel/cr_cls2_modality_txtcol(secKeywords)_(0621_aft_pre10).xlsx
-    """
     if task == 'explain_visual':
         model.to(training_args.device)
         model.eval()
@@ -117,7 +117,7 @@ def main(bert_model_args: BertModelArguments,
         train_dataset=train_dataset,
         eval_dataset=val_dataset,  # can be None in pretrain
         compute_metrics=calc_classification_metrics if 'fine_tune' in task else None,
-        callbacks=[EarlyStoppingCallback(training_args.patience)] if 'fine_tune' in task else None,
+        callbacks=[EarlyStoppingCallback(training_args.patience), TimeCallback()] if 'fine_tune' in task else [TimeCallback()],
         data_collator=MultimodalDatasetCollator(tokenizer, bert_model_args.max_seq_length)
     )
     if task == 'pretrain':

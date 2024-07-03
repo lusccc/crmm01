@@ -124,12 +124,16 @@ def lime_visual(model, tokenizer, test_dataset):
                    )
     print()
 
+
+"""
+手动保存下面这些对象，然后在explain_visual_file_v2.py进行可视化
+"""
 # word_importance_pos
 # word_importance_neg
 # word_freq_pos
 # word_freq_neg
-with open('data.pkl', 'wb') as file:
-    pickle.dump(data, file)
+# with open('data.pkl', 'wb') as file:
+#     pickle.dump(data, file)
 
 
 

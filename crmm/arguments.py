@@ -20,6 +20,7 @@ class CrmmTrainingArguments(TrainingArguments):
     use_modality: str = field(default="num,cat,text", metadata={"help": "used in multi dbn"})
     modality_fusion_method: str = field(default="conv", metadata={"help": "used in multi dbn"})
     patience: int = field(default=1000, metadata={"help": ""})
+    small_params: bool = field(default=False, metadata={"help": "use small params"})
 
     # @@@@ 2. huggingface args
     # output_dir and logging_dir will be auto set in runner_setup.setup

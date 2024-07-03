@@ -23,26 +23,29 @@ def create_exp_dirs(root_dir, task):
     return exp_args_output_dir, exp_args_logging_dir
 
 
+from dataclasses import dataclass, field
+from typing import List, Optional
+
+
+@dataclass
 class MainRunnerArgs:
-    def __init__(self, root_dir, scratch, dataset_name, dataset_info, data_path, excel_path, bert_model,
-                 use_hf_pretrained_bert_in_pretrain, freeze_bert_params, modality, modality_fusion_method,
-                 text_cols, batch_size, pre_epoch, finetune_epoch, patience):
-        self.root_dir = root_dir
-        self.scratch = scratch
-        self.dataset_name = dataset_name
-        self.dataset_info = dataset_info
-        self.data_path = data_path
-        self.excel_path = excel_path
-        self.bert_model = bert_model
-        self.use_hf_pretrained_bert_in_pretrain = use_hf_pretrained_bert_in_pretrain
-        self.freeze_bert_params = freeze_bert_params
-        self.modality = modality
-        self.modality_fusion_method = modality_fusion_method
-        self.text_cols = text_cols
-        self.batch_size = batch_size
-        self.pre_epoch = pre_epoch
-        self.finetune_epoch = finetune_epoch
-        self.patience = patience
+    root_dir: str = "/default/root/dir"
+    scratch: str = "/default/scratch"
+    dataset_name: str = "default_dataset"
+    dataset_info: str = "default_info"
+    data_path: str = "/default/data/path"
+    excel_path: str = "/default/excel/path"
+    bert_model: str = "bert-base-uncased"
+    use_hf_pretrained_bert_in_pretrain: str = 'true'
+    freeze_bert_params: str = 'true'
+    modality: str = "text"
+    modality_fusion_method: str = "concat"
+    text_cols: str = ''
+    batch_size: str = '32'
+    pre_epoch: str = '10'
+    finetune_epoch: str = '5'
+    patience: str = '3'
+    small_params: str = 'false'
 
 
 def run_single_exp(main_runner_args):
@@ -76,7 +79,8 @@ def run_single_exp(main_runner_args):
             "--data_path", main_runner_args.data_path,
             "--output_dir", output_dir,
             "--logging_dir", logging_dir,
-            "--save_excel_path", main_runner_args.excel_path
+            "--save_excel_path", main_runner_args.excel_path,
+            "--small_params", main_runner_args.small_params
         ]
         subprocess.run(cmd)
     else:
@@ -102,7 +106,8 @@ def run_single_exp(main_runner_args):
             "--data_path", main_runner_args.data_path,
             "--output_dir", pretrain_output_dir,
             "--logging_dir", pretrain_logging_dir,
-            "--save_excel_path", main_runner_args.excel_path
+            "--save_excel_path", main_runner_args.excel_path,
+            "--small_params", main_runner_args.small_params
         ]
         print(" ".join(pretrain_cmd))
         subprocess.run(pretrain_cmd)
@@ -129,11 +134,11 @@ def run_single_exp(main_runner_args):
             "--output_dir", fine_tune_output_dir,
             "--logging_dir", fine_tune_logging_dir,
             "--pretrained_model_dir", pretrain_output_dir,
-            "--save_excel_path", main_runner_args.excel_path
+            "--save_excel_path", main_runner_args.excel_path,
+            "--small_params", main_runner_args.small_params
         ]
         print(" ".join(cmd))
         subprocess.run(cmd)
-
 
 
 def generate_dataset(data_config):
@@ -201,7 +206,7 @@ def run_pre_epoch_exps(data_config):
 
 
 def run_conv_fusion_exp(data_config, pre_epoch):
-    extra_info = "conv_or_concat"
+    extra_info = "conv_or_concat_or_attn"
     main_runner_args = MainRunnerArgs(
         root_dir="./exps",
         scratch="no",
@@ -213,10 +218,34 @@ def run_conv_fusion_exp(data_config, pre_epoch):
         use_hf_pretrained_bert_in_pretrain="true",
         freeze_bert_params="default_best",
         modality="num,cat,text",
-        modality_fusion_method="concat",  # !
+        modality_fusion_method="attention",  # !
         text_cols="secKeywords",
-        batch_size="300",
+        batch_size="3000",
         pre_epoch=pre_epoch,
+        finetune_epoch="200",
+        patience="1000"
+    )
+    run_single_exp(main_runner_args)
+
+
+def run_small_params_exp(data_config, pre_epoch):
+    extra_info = "small_params_exp"
+    main_runner_args = MainRunnerArgs(
+        root_dir="./exps",
+        scratch="no",
+        dataset_name=data_config["dataset_name"],
+        dataset_info="",
+        data_path=data_config["data_path"],
+        excel_path=f"./excel/{data_config['dataset_name']}_cls{data_config['n_class']}_({extra_info}).xlsx",  # !
+        bert_model="prajjwal1/bert-tiny-tiny",  # !
+        use_hf_pretrained_bert_in_pretrain="true",  # !
+        freeze_bert_params="default_best",  # !
+        small_params="true",
+        modality="num,cat,text",
+        modality_fusion_method="conv",
+        text_cols="secKeywords",
+        batch_size="3000",
+        pre_epoch=pre_epoch,  # !
         finetune_epoch="200",
         patience="1000"
     )
@@ -274,14 +303,14 @@ def run_modality_exps(data_config, pre_epoch):
     # modalities = ["text", "num,text", "cat,text", "num,cat,text"]
     # modalities = ["num", "cat", "text", "num,cat", "num,text", "cat,text",]
     # modalities = [ "text",  "num,text", "cat,text", "num,cat,text"]
-    # modalities = ["num,cat,text"]
+    modalities = ["num,cat,text"]
     # modalities = ["num,cat"]
 
-    modalities = ["text"]
+    # modalities = ["text"]
 
     # extra_info = 'None'
     # extra_info = 'secItem2'
-    extra_info = '0621_aft_pre10'
+    extra_info = '240702'
 
     main_runner_args = MainRunnerArgs(
         root_dir="./exps",
@@ -475,7 +504,7 @@ if __name__ == "__main__":
                                f"{data_config['split_method']}_" \
                                f"st{data_config['sent_num']}_kw{data_config['kw_num']}"
 
-    print(data_config)
+    # print(data_config)
 
     # tested and found best pretrain_epochs
     # "cr_cls2": "1",
@@ -503,7 +532,7 @@ if __name__ == "__main__":
             # split_dataset(data_config)
             # print(data_config)
             # run_pre_epoch_exps(data_config)
-            run_modality_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
+            # run_modality_exps(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_kw_or_txt_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
 
             # for pre in [ 7, 8, 9, 10, 11, 12, 13, 14, 15]:
@@ -513,6 +542,8 @@ if __name__ == "__main__":
             # run_conv_fusion_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
             # run_benchmark(data_config)
             # run_benchmark_rolling_window(data_config)
+
+            run_small_params_exp(data_config, pre_epoch=pretrain_epochs[f'{dt}_cls{n_cls}'])
 
     # generate_dataset(data_config)
 
