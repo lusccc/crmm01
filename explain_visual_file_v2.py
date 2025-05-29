@@ -11,15 +11,26 @@ def load_obj(fname):
     return loaded_data
 
 
-dt = 'cr'
+dt = 'cr2'
 
 word_importance_pos = load_obj(f'{dt}_word_importance_pos.pkl')
 word_importance_neg = load_obj(f'{dt}_word_importance_neg.pkl')
 word_freq_pos = load_obj(f'{dt}_word_freq_pos.pkl')
 word_freq_neg = load_obj(f'{dt}_word_freq_neg.pkl')
 
-exclude_words = ['venezuela', 'pharmaceuticals', 'loans', 'data', 'rate','rates', 'notes',
-                 'southwests','epa', 'income']
+exclude_words = [
+    'venezuela',
+    'pharmaceuticals',   # 不需要复数
+    'loans',  # 不需要复数
+    'data',
+    'rate',
+    'rates',
+    'notes',
+    'southwests',
+    'epa',
+    'fcc'
+    # 'income'
+]
 for word in exclude_words:
     if word in word_importance_pos:
         del word_importance_pos[word]
@@ -34,7 +45,7 @@ for word in word_importance_neg:
     word_importance_neg[word] /= word_freq_neg[word]
 
 # 计算加权重要性，并引入词频门槛
-frequency_threshold = 7 if dt == 'cr2' else 5  # 可以根据具体情况调整这个阈值
+frequency_threshold = 12 if dt == 'cr2' else 6  # 可以根据具体情况调整这个阈值
 
 weighted_importance_pos = {word: word_importance_pos[word] * word_freq_pos[word]
                            for word in word_importance_pos if word_freq_pos[word] >= frequency_threshold}
@@ -44,16 +55,18 @@ weighted_importance_neg = {word: word_importance_neg[word] * word_freq_neg[word]
 # 取加权影响最大的前30个词
 # top_words_pos = sorted(weighted_importance_pos.items(), key=lambda x: abs(x[1]), reverse=True)[:30]
 # top_words_neg = sorted(weighted_importance_neg.items(), key=lambda x: abs(x[1]), reverse=True)[:30]
+
 # 分别取加权影响的正值和负值
+n = 10
 top_pos_positive = sorted((item for item in weighted_importance_pos.items() if item[1] > 0),
-                          key=lambda x: x[1], reverse=True)[:15]
+                          key=lambda x: x[1], reverse=True)[:n]
 top_pos_negative = sorted((item for item in weighted_importance_pos.items() if item[1] < 0),
-                          key=lambda x: x[1])[:15]
+                          key=lambda x: x[1])[:n]
 
 top_neg_positive = sorted((item for item in weighted_importance_neg.items() if item[1] > 0),
-                          key=lambda x: x[1], reverse=True)[:15]
+                          key=lambda x: x[1], reverse=True)[:n]
 top_neg_negative = sorted((item for item in weighted_importance_neg.items() if item[1] < 0),
-                          key=lambda x: x[1])[:15]
+                          key=lambda x: x[1])[:n]
 
 # Combine the results
 top_words_pos = top_pos_positive + top_pos_negative
@@ -68,15 +81,18 @@ def format_importance(value):
     return f"{value:+.3f}"
 
 
-def plot_top_words(top_words, title):
+def plot_top_words(top_words, title, ax):
     words, importances = zip(*top_words)
+    print(f'{title}')
+
     # importances = [format_importance(imp) for imp in importances]
-    data = {'Importance': [format_importance(imp) for imp in importances], 'Word': words, 'Importance_ori': importances}
+    data = {'Word': words, 'Importance': [format_importance(imp) for imp in importances], 'Importance_ori': importances}
     df = pd.DataFrame(data)
     df = df.sort_values(by='Importance_ori', ascending=False)
     df = df.drop('Importance_ori', axis=1)
 
-    fig, ax = plt.subplots(figsize=(6, 10))
+    print(df)
+
     ax.axis('tight')
     ax.axis('off')
 
@@ -85,7 +101,7 @@ def plot_top_words(top_words, title):
                      cellLoc='center',
                      loc='center',
                      colColours=["#DEDEDE"] * len(df.columns),
-                     colWidths=[0.4, 0.6])
+                     colWidths=[0.6, 0.4])
 
     # 去掉表格边框
     table.scale(1, 1.5)
@@ -105,9 +121,20 @@ def plot_top_words(top_words, title):
         table[(i + 1, 0)].set_facecolor(color)
         table[(i + 1, 1)].set_facecolor(color)
 
-    plt.title(title)
-    plt.show()
+    # 使用 annotate 添加底部标题
+    ax.annotate(title, xy=(0.5, 0.13), xycoords='axes fraction', ha='center', va='center', fontsize=12,
+                fontweight='bold')
 
 
-plot_top_words(top_words_pos, 'top_words_pos')
-plot_top_words(top_words_neg, 'top_words_neg')
+fig, axs = plt.subplots(1, 2, figsize=(9, 10))
+plot_top_words(top_words_pos,
+               '(a) Important words for predictions of good credit.',
+               # '(a) Good credit',
+               axs[0])
+print()
+plot_top_words(top_words_neg,
+               '(b) Important words for predictions of bad credit.',
+               # '(b) Bad credit',
+               axs[1])
+plt.tight_layout(pad=3.0)
+plt.show()
